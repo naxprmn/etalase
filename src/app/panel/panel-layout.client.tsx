@@ -789,7 +789,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
                   ))}
                 </div>
                 <p className="mt-2 text-[11px] text-gray-400">
-                  *Sistem akan otomatis mengkategorikan statistik berdasarkan kata kunci (contoh: "Dinas" masuk ke Pemerintah Daerah).
+                  *Sistem akan otomatis mengkategorikan statistik berdasarkan kata kunci (contoh: &quot;Dinas&quot; masuk ke Pemerintah Daerah).
                 </p>
               </div>
 
