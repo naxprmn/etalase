@@ -1,0 +1,1 @@
+ALTER TABLE "jurnal" ADD COLUMN "ringkasan" text;

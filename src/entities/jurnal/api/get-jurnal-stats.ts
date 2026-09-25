@@ -203,7 +203,12 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
 
   try {
     const partnerRes: any = await db.execute(sql`
-      SELECT partner->>'instansi' as instansi, partner->>'nama' as nama
+      SELECT 
+        CASE 
+          WHEN jsonb_typeof(partner) = 'string' THEN partner#>>'{}'
+          WHEN jsonb_typeof(partner) = 'object' THEN COALESCE(partner->>'instansi', partner->>'nama')
+          ELSE NULL
+        END as val
       FROM ${jurnal},
       jsonb_array_elements(
         CASE
@@ -220,7 +225,7 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
     
     if (partnerRes && partnerRes.rows) {
       for (const row of partnerRes.rows) {
-        const val = (row.instansi || row.nama || '').toString().trim().toLowerCase()
+        const val = (row.val || '').toString().trim().toLowerCase()
         if (!val) continue
         uniqueMitras.add(val)
         

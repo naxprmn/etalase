@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import LandingView from '@/views/landing'
-import { getMeAction } from '@/entities/lawet-user/api/get-current-user.action'
+import { getMeAction } from '@/entities/lawet-user'
 import { db } from '@/shared/lib/db'
 import { jurnal } from '../../drizzle/schema'
 import { eq, desc } from 'drizzle-orm'

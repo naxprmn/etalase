@@ -1,6 +1,6 @@
 import { getJurnalWorkspaceAction } from '@/features/jurnal-saya/api/get-my-jurnals.action'
-import { getMeAction } from '@/entities/lawet-user/api/get-current-user.action'
-import PanelLayoutClient from './panel-layout.client'
+import { getMeAction } from '@/entities/lawet-user'
+import PanelLayoutClient from '@/views/panel/ui/panel-layout.client'
 
 import { redirect } from 'next/navigation'
 
