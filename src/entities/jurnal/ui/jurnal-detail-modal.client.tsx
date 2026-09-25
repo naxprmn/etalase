@@ -262,56 +262,6 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
 
 
 
-            {/* Dokumen Pendukung */}
-
-            <div className="mb-10">
-
-              <div className="flex items-center gap-3 mb-5 text-[#64748B] font-bold text-[15px]">
-
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-
-                Dokumen pendukung
-
-              </div>
-
-              {item.dokumen_pendukung && item.dokumen_pendukung.length > 0 ? (
-
-                <div className="border border-[#CBD5E1] rounded-[16px] bg-transparent overflow-hidden">
-
-                  {item.dokumen_pendukung.map((doc: any, i: number) => (
-
-                    <a key={i} href={doc.url} target="_blank" rel="noreferrer" download={doc.nama || doc.name || 'Dokumen'} className="flex items-center justify-between p-5 border-b border-[#CBD5E1] hover:bg-black/5 cursor-pointer transition-colors group">
-
-                      <div className="flex items-center gap-4 text-[#334155] font-bold text-[14px]">
-
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-
-                        {doc.nama || doc.name || 'Dokumen'}
-
-                      </div>
-
-                      <div className="flex items-center gap-5 text-[#94A3B8] text-[13px] font-bold">
-
-                        {doc.size ? Math.round(doc.size / 1024) + ' KB' : ''}
-
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:text-[#F7921C] transition-colors"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-
-                      </div>
-
-                    </a>
-
-                  ))}
-
-                </div>
-
-              ) : (
-
-                <div className="text-gray-400 italic text-[14px]">Tidak ada dokumen pendukung</div>
-
-              )}
-
-            </div>
-
 
 
             {/* Pihak Terkait */}
