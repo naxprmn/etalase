@@ -9,25 +9,17 @@ import { useQuery } from '@tanstack/react-query'
 
 
 interface JurnalDetailModalProps {
-
   id: string | null
-
   isOpen: boolean
-
   onClose: () => void
-
+  isLoggedIn?: boolean
 }
 
-
-
 export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
-
   id,
-
   isOpen,
-
-  onClose
-
+  onClose,
+  isLoggedIn = false
 }) => {
   const [zoomedImage, setZoomedImage] = React.useState<string | null>(null);
   const [zoomedIndex, setZoomedIndex] = React.useState<number>(0);
@@ -126,35 +118,23 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
 
 
   return (
-
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm" style={{ fontFamily: 'Poppins' }}>
-
+    <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins' }}>
       <div 
-
         className="absolute inset-0"
-
         onClick={onClose}
-
       ></div>
 
-
-
-      <div className="relative w-full max-w-[760px] max-h-[90vh] min-h-[400px] bg-[#F1F6FC] rounded-[24px] shadow-2xl overflow-y-auto overflow-x-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
-
+      <div className="relative w-full max-w-[760px] max-h-[92vh] sm:max-h-[90vh] min-h-[400px] bg-[#F1F6FC] rounded-t-[32px] sm:rounded-[24px] shadow-2xl overflow-y-auto overflow-x-hidden flex flex-col animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
         
+        {/* Mobile Drag Indicator */}
+        <div className="sm:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
 
         {/* Close Button */}
-
         <button 
-
           onClick={onClose}
-
-          className="absolute top-6 right-6 z-10 text-[#9CA3AF] hover:text-[#142B42] transition-colors p-2 bg-white rounded-full shadow-sm hover:shadow-md"
-
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10 text-[#9CA3AF] hover:text-[#142B42] transition-colors p-2 bg-white rounded-full shadow-sm hover:shadow-md active:scale-95"
         >
-
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
 
 
@@ -168,8 +148,7 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
           </div>
 
         ) : (
-
-          <div className="p-8 sm:p-10 pb-8">
+          <div className="p-5 sm:p-10 pb-8">
 
             
 
@@ -228,7 +207,7 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
               </div>
             )}
 
-            <hr className="border-[#E2E8F0] mb-8 -mx-10" />
+            <hr className="border-[#E2E8F0] mb-8 -mx-5 sm:-mx-10" />
 
 
 
@@ -253,6 +232,60 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
                     <img key={i} data-doc-url={doc.url} src={doc.url} alt={`Dokumentasi ${i+1}`} className="w-full h-[90px] object-cover rounded-[16px] cursor-pointer hover:scale-105 transition-transform shadow-sm" onClick={(e) => { e.stopPropagation(); setSlideDir('right'); setZoomedIndex(i); setZoomedImage(doc.url); }} />
 
                   ))}
+
+                </div>
+
+              </div>
+
+            )}
+
+
+            {/* Dokumen Pendukung (Hanya tampil jika login) */}
+
+            {isLoggedIn && item.dokumen_pendukung && item.dokumen_pendukung.length > 0 && (
+
+              <div className="mb-10">
+
+                <div className="flex items-center gap-3 mb-5 text-[#64748B] font-bold text-[15px]">
+
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+
+                  Dokumen Tambahan
+
+                </div>
+
+                <div className="flex flex-col gap-3">
+
+                  {item.dokumen_pendukung.map((doc: any, i: number) => {
+                    const hasUrl = !!doc.url;
+                    return (
+                    <a key={i} href={doc.url || undefined} target={hasUrl ? "_blank" : undefined} rel={hasUrl ? "noreferrer" : undefined} className={`flex items-center justify-between p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] transition-colors group ${hasUrl ? 'hover:bg-[#F1F5F9] cursor-pointer' : 'opacity-70 cursor-not-allowed'}`} onClick={(e) => { if (!hasUrl) { e.preventDefault(); alert('URL dokumen tidak ditemukan atau belum terunggah dengan sempurna.'); } }}>
+
+                      <div className="flex items-center gap-3">
+
+                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm text-[#0F9347]">
+
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+
+                        </div>
+
+                        <div className="flex flex-col">
+
+                          <span className="text-[#334155] font-semibold text-[14px]">{doc.nama || doc.name || `Dokumen ${i+1}`}</span>
+                          <span className="text-[#94A3B8] text-[12px]">Dokumen Lampiran</span>
+
+                        </div>
+
+                      </div>
+
+                      <div className={`text-[#507CF1] ${hasUrl ? 'group-hover:scale-110' : ''} transition-transform`}>
+
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+
+                      </div>
+
+                    </a>
+                  )})}
 
                 </div>
 

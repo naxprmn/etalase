@@ -18,6 +18,7 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
   const [deletePopup, setDeletePopup] = useState<string | null>(null);
   const [detailPopup, setDetailPopup] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [toast, setToast] = useState<{message: string, type: 'info'|'success'|'error'} | null>(null);
   const showToast = (message: string, type: 'info'|'success'|'error' = 'info') => {
@@ -40,6 +41,11 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
     }
     return items;
   }, [listToRender, activeTab]);
+
+  const itemsPerPage = 6;
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / itemsPerPage));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  const currentItems = filteredList.slice((validCurrentPage - 1) * itemsPerPage, validCurrentPage * itemsPerPage);
 
 
 
@@ -78,6 +84,22 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
       color: CAT_COLORS[index % CAT_COLORS.length]
     }));
   }, [allItems]);
+
+  const pieStaffData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    // Only count subordinates for the staff chart if applicable
+    const sourceItems = hasSubordinates ? workspace!.subordinates : allItems;
+    sourceItems.forEach(item => {
+      const name = item.owner_name || 'Tanpa Nama';
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    const STAFF_COLORS = ['#6366F1', '#F87171', '#FBBF24', '#38BDF8', '#A78BFA', '#34D399'];
+    return Object.entries(counts).map(([name, value], index) => ({
+      name,
+      value,
+      color: STAFF_COLORS[index % STAFF_COLORS.length]
+    }));
+  }, [allItems, hasSubordinates, workspace]);
 
   if (error) {
     return <div className="p-10 text-red-500">{error}</div>;
@@ -130,8 +152,8 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
         </div>
       </div>
 
-      {/* 3 Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* Analytics Charts */}
+      <div className={`grid grid-cols-1 ${hasSubordinates ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6 mb-8`}>
         {/* Bar Chart */}
         <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm h-[320px] flex flex-col">
           <div className="flex justify-between items-center mb-6">
@@ -204,11 +226,39 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
             ))}
           </div>
         </div>
+
+        {/* Staff Pie Chart (Kasubag Only) */}
+        {hasSubordinates && (
+          <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm h-[320px] flex flex-col items-center">
+            <h4 className="text-sm font-bold text-[#142B42] w-full text-left mb-2">Staff Uploud Jurnal</h4>
+            <div className="flex-1 w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="80%">
+                <PieChart>
+                  <Pie data={pieStaffData} cx="50%" cy="50%" innerRadius={0} outerRadius={80} dataKey="value" stroke="none">
+                    {pieStaffData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex justify-center flex-wrap gap-3 mt-2 w-full text-[10px] text-[#7B8EA0] font-medium">
+              {pieStaffData.map((entry, index) => (
+                <div key={index} className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                  {entry.name}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Jurnal List Section */}
       <div className="bg-white rounded-[24px] p-8 shadow-sm mb-10">
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 w-full">
           <div className="flex gap-4">
             <div className="mt-1 text-[#142B42]">
               <User size={24} strokeWidth={2} />
@@ -223,33 +273,33 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
             </div>
           </div>
           
-          <div className="flex bg-[#F6F9FC] p-1.5 rounded-full">
+          <div className="flex bg-[#F6F9FC] p-1.5 rounded-full w-full md:w-auto overflow-x-auto hide-scrollbar">
             <button 
-              onClick={() => setActiveTab('Semua')}
-              className={`px-6 py-2 rounded-full text-[14px] font-semibold transition-colors ${activeTab === 'Semua' ? 'bg-[#142B42] text-white' : 'text-[#7B8EA0] hover:bg-gray-100'}`}
+              onClick={() => { setActiveTab('Semua'); setCurrentPage(1); }}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-full text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'Semua' ? 'bg-[#142B42] text-white' : 'text-[#7B8EA0] hover:bg-gray-100'}`}
             >
               Semua
             </button>
             <button 
-              onClick={() => setActiveTab('Draft')}
-              className={`px-6 py-2 rounded-full text-[14px] font-semibold transition-colors ${activeTab === 'Draft' ? 'bg-[#142B42] text-white' : 'text-[#7B8EA0] hover:bg-gray-100'}`}
+              onClick={() => { setActiveTab('Draft'); setCurrentPage(1); }}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-full text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'Draft' ? 'bg-[#142B42] text-white' : 'text-[#7B8EA0] hover:bg-gray-100'}`}
             >
               Draft
             </button>
             <button 
-              onClick={() => setActiveTab('Terbit')}
-              className={`px-6 py-2 rounded-full text-[14px] font-semibold transition-colors ${activeTab === 'Terbit' ? 'bg-[#142B42] text-white' : 'text-[#7B8EA0] hover:bg-gray-100'}`}
+              onClick={() => { setActiveTab('Terbit'); setCurrentPage(1); }}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-full text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'Terbit' ? 'bg-[#142B42] text-white' : 'text-[#7B8EA0] hover:bg-gray-100'}`}
             >
               Terbit
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredList.map((item, idx) => {
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {currentItems.map((item, idx) => {
             const isPub = item.status === 'published';
             return (
-              <div key={idx} className="bg-[#FFFEFE] border border-[#142B42] rounded-[12px] p-4 flex flex-col transition-all hover:shadow-md w-full min-h-[185px] h-full">
+              <div key={idx} className="bg-[#FFFEFE] border border-[#142B42] rounded-[12px] p-4 flex flex-col transition-all hover:shadow-md w-full min-h-[185px]">
                 <div className="flex justify-between items-start gap-1 mb-3">
                   <span className="bg-[#E7F2FE] text-[#3B82F6] px-2 h-[20px] rounded-[10px] text-[9px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 overflow-hidden">
                     <FileText size={10} strokeWidth={2.5} className="shrink-0" /> 
@@ -293,6 +343,12 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
                   </div>
                 </div>
 
+                {item.status === 'rejected' && item.workflow_notes && (
+                  <div className="mb-3 bg-[#FEF2F2] border border-[#FCA5A5] rounded-[6px] p-2 text-[#991B1B] text-[10px]">
+                    <span className="font-bold">Catatan Pengembalian:</span> {item.workflow_notes}
+                  </div>
+                )}
+
                 <div className="w-full">
                   {isPub ? (
                     <button 
@@ -323,11 +379,24 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
           })}
           
           {filteredList.length === 0 && (
-            <div className="col-span-3 py-10 text-center text-[#7B8EA0] font-medium">
+            <div className="col-span-1 md:col-span-3 py-10 text-center text-[#7B8EA0] font-medium">
               {hasSubordinates ? 'Tidak ada jurnal bawahan' : 'Belum ada jurnal yang diajukan'}
             </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-gray-100">
+            <span className="text-xs text-[#7B8EA0] font-medium">Menampilkan {currentItems.length} dari {filteredList.length} jurnal</span>
+            <div className="flex gap-2">
+              <button disabled={validCurrentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-[#7B8EA0] hover:bg-gray-50 disabled:opacity-50">«</button>
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button key={i} onClick={() => setCurrentPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded border ${validCurrentPage === i + 1 ? 'bg-[#142B42] text-white border-[#142B42]' : 'border-gray-200 text-[#7B8EA0] hover:bg-gray-50'}`}>{i + 1}</button>
+              ))}
+              <button disabled={validCurrentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-[#7B8EA0] hover:bg-gray-50 disabled:opacity-50">»</button>
+            </div>
+          </div>
+        )}
       </div>
       {/* DELETE CONFIRMATION POPUP */}
       {deletePopup && (

@@ -94,36 +94,37 @@ export const JurnalList: React.FC<JurnalListProps> = ({
 
   return (
     <div className="flex flex-col w-full pb-20">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 min-h-[400px]">
+      <div className="flex md:grid overflow-x-auto snap-x snap-mandatory md:overflow-visible hide-scrollbar md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 min-h-[400px] pb-4 -mx-4 px-4 md:mx-0 md:px-0">
         {isLoading ? (
-           <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center py-20 text-[#142B42] font-medium">
+           <div className="min-w-[85vw] md:min-w-0 md:col-span-2 lg:col-span-3 flex justify-center py-20 text-[#142B42] font-medium">
              Memuat jurnal...
            </div>
         ) : actualItems.length === 0 ? (
-           <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center py-20 text-[#7B8EA0] font-medium">
+           <div className="min-w-[85vw] md:min-w-0 md:col-span-2 lg:col-span-3 flex justify-center py-20 text-[#7B8EA0] font-medium">
              Tidak ada jurnal ditemukan
            </div>
         ) : (
           actualItems.map((item: any, idx: number) => {
             const delayMs = idx < 5 ? `${idx * 120 + 200}ms` : '0ms'
             return (
-              <JurnalCard
-                key={item.id}
-                id={item.id}
-                judul={item.judul}
+              <div key={item.id} className="min-w-[85vw] snap-center md:min-w-0 md:snap-none h-full flex flex-col shrink-0 md:shrink">
+                <JurnalCard
+                  id={item.id}
+                  judul={item.judul}
                   ringkasan={item.ringkasan}
-                tanggal_kegiatan={item.tanggal_kegiatan}
-                kategori={item.kategori}
-                thumbnail_url={item.thumbnail_url}
-                pihak_terkait={item.pihak_terkait}
-                tags={item.tags}
-                isActive={activeId === item.id}
-                isLineTarget={lineTargetId === item.id}
-                onClick={() => onCardClick(item.id)}
-                onHover={onHover}
-                onLeaveHover={onLeaveHover}
-                staggerDelay={delayMs}
-              />
+                  tanggal_kegiatan={item.tanggal_kegiatan}
+                  kategori={item.kategori}
+                  thumbnail_url={item.thumbnail_url}
+                  pihak_terkait={item.pihak_terkait}
+                  tags={item.tags}
+                  isActive={activeId === item.id}
+                  isLineTarget={lineTargetId === item.id}
+                  onClick={() => onCardClick(item.id)}
+                  onHover={onHover}
+                  onLeaveHover={onLeaveHover}
+                  staggerDelay={delayMs}
+                />
+              </div>
             )
           })
         )}

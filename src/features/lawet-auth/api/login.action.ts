@@ -6,14 +6,17 @@ const LAWET_API_URL = process.env.LAWET_API_URL as string
 
 export async function loginAction(username: string, pin: string) {
   try {
-    // --- DUMMY ACCOUNTS FOR UI TESTING ---
-    if (username === 'staff' && pin === '1234') {
-      cookies().set({ name: 'lawet_token', value: 'dummy-staff-token', httpOnly: true, path: '/' })
-      return { success: true, user: { name: 'Staff Tester' } }
-    }
-    if (username === 'kasubag' && pin === '1234') {
-      cookies().set({ name: 'lawet_token', value: 'dummy-kasubag-token', httpOnly: true, path: '/' })
-      return { success: true, user: { name: 'Kasubag Tester' } }
+    // --- BLUEPRINT: MULTIPLE DUMMY ACCOUNTS FOR UI TESTING ---
+    // Tambahkan kredensial untuk user dummy di bawah ini.
+    const DUMMY_ACCOUNTS: Record<string, { pin: string, token: string, name: string }> = {
+      'staff': { pin: '1234', token: 'dummy-staff-token', name: 'Agus' },
+      'staff_budi': { pin: '1234', token: 'dummy-staff-2-token', name: 'Budi' },
+      'kasubag': { pin: '1234', token: 'dummy-kasubag-token', name: 'Candra' },
+    };
+
+    if (DUMMY_ACCOUNTS[username] && DUMMY_ACCOUNTS[username].pin === pin) {
+      cookies().set({ name: 'lawet_token', value: DUMMY_ACCOUNTS[username].token, httpOnly: true, path: '/' })
+      return { success: true, user: { name: DUMMY_ACCOUNTS[username].name } }
     }
     // -------------------------------------
 

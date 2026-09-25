@@ -18,11 +18,12 @@ export async function setujuJurnalAction(id: string) {
   }
 }
 
-export async function tolakJurnalAction(id: string) {
+export async function tolakJurnalAction(id: string, reason?: string) {
   try {
     await db.update(jurnal).set({ 
       workflow_status: 'rejected',
-      is_published: false
+      is_published: false,
+      workflow_notes: reason || null
     }).where(eq(jurnal.id, id));
     revalidatePath('/panel');
     return { success: true };

@@ -28,7 +28,7 @@ export function FotoUploader({ value, onChange }: Props) {
 
     const res = await uploadFotoAction(formData)
     if (res.success && res.data?.url) {
-      onChange([...value, { url: res.data.object_name, type: 'image', caption: '' }])
+      onChange([...value, { url: res.data.url, type: 'image', caption: '' }])
     } else {
       setError(res.error || 'Gagal mengunggah foto')
     }

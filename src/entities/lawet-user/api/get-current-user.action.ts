@@ -10,24 +10,35 @@ export async function getMeAction(): Promise<LawetUser | null> {
     const token = cookies().get('lawet_token')?.value
     if (!token) return null
 
-    // --- DUMMY PROFILES FOR UI TESTING ---
-    if (token === 'dummy-staff-token') {
-      return {
+    // --- BLUEPRINT: MULTIPLE DUMMY PROFILES FOR UI TESTING ---
+    // Untuk menambahkan user staff/kasubag lain tanpa merusak arsitektur API Lawet Hub asli,
+    // cukup tambahkan data user di objek DUMMY_USERS ini dengan format kunci token yang unik.
+    const DUMMY_USERS: Record<string, any> = {
+      'dummy-staff-token': {
         id: 'dummy-staff-1',
-        name: 'Staff',
-        username: 'staff',
-        division: { id: 'div-1', name: 'Devisi Pengawasan' },
-        role: { id: 'r1', name: 'Staff', level: 1, can_approve: false, is_superadmin: false }
-      }
-    }
-    if (token === 'dummy-kasubag-token') {
-      return {
+        name: 'Agus',
+        username: 'Agus',
+        division: { id: 'div-1', name: 'Divisi Pengawasan' },
+        role: { id: 'r1', name: 'Agus', level: 1, can_approve: false, is_superadmin: false }
+      },
+      'dummy-staff-2-token': {
+        id: 'dummy-staff-2',
+        name: 'Budi',
+        username: 'staff_budi',
+        division: { id: 'div-1', name: 'Divisi Pengawasan' },
+        role: { id: 'r1', name: 'Agus', level: 1, can_approve: false, is_superadmin: false }
+      },
+      'dummy-kasubag-token': {
         id: 'dummy-kasubag-1',
-        name: 'Kasubag Humas',
+        name: 'Candra',
         username: 'kasubag',
-        division: { id: 'div-2', name: 'KASUBAG' },
+        division: { id: 'div-2', name: 'Kasubag PPPS' },
         role: { id: 'r2', name: 'Kasubag', level: 2, can_approve: true, is_superadmin: false }
       }
+    };
+
+    if (DUMMY_USERS[token]) {
+      return DUMMY_USERS[token];
     }
     // -------------------------------------
 

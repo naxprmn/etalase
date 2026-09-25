@@ -2,17 +2,29 @@ import { NextResponse, NextRequest } from 'next/server'
 
 import { getJurnalDetail } from '@/entities/jurnal/api/get-jurnal-detail'
 
-
+import { getMeAction } from '@/entities/lawet-user'
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
 
   try {
 
+    const user = await getMeAction()
+
     const id = params.id
 
-    const item = await getJurnalDetail(id, true)
-
+    const item = await getJurnalDetail(id, false)
     
+    if (item && item.workflow_status !== 'published') {
+      if (!user) {
+        return NextResponse.json({ status: "error", message: "not found" }, { status: 404 })
+      }
+      // Strict check: Only Kasubag or the owner can view
+      const isOwner = user.name === item.redaksi;
+      const isKasubag = user.role?.name?.toLowerCase().includes('kasubag') || user.role?.can_approve;
+      if (!isOwner && !isKasubag) {
+        return NextResponse.json({ status: "error", message: "not found" }, { status: 404 })
+      }
+    }
 
     if (!item) {
 

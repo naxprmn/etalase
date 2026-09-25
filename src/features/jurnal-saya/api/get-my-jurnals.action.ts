@@ -33,6 +33,7 @@ tags?: string[]
   deskripsi?: string
   created_at?: string
   updated_at?: string
+  workflow_notes?: string
 }
 
 export interface JurnalWorkspace {
@@ -106,6 +107,7 @@ function normalizeJurnal(
     link_publikasi: readString(item.link_publikasi),
     created_at: readString(item.created_at),
     updated_at: readString(item.updated_at) || readString(item.last_synced_at),
+    workflow_notes: readString(item.workflow_notes),
   }
 }
 
@@ -241,6 +243,7 @@ tags: (j.tags as string[]) || [],
         : '',
       created_at: String(j.created_at),
       updated_at: String(j.updated_at),
+      workflow_notes: j.workflow_notes || undefined,
     }));
 
   const localSubs: MyJurnalItem[] = canReview ? localJurnals
@@ -265,6 +268,7 @@ tags: (j.tags as string[]) || [],
         : '',
       created_at: String(j.created_at),
       updated_at: String(j.updated_at),
+      workflow_notes: j.workflow_notes || undefined,
     })) : [];
 
   return {
