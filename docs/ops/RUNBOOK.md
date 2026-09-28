@@ -59,7 +59,7 @@ Jalankan dari root repositori setelah `DATABASE_URL` menunjuk ke database target
    curl http://localhost:2006/api/health
    ```
 
-Stack produksi terdiri dari `alas-db` (PostgreSQL hanya pada jaringan internal), `alas-app` (Next.js pada port internal 3000/host 3001), dan `alas-nginx` (port host 2006). `ALAS_DB_PASSWORD` wajib diisi; Compose berhenti sebelum start jika nilainya tidak tersedia. Workflow GitHub Actions membangun serta mendorong image GHCR ketika ada push ke `main`.
+Stack produksi terdiri dari `alas-db` (PostgreSQL hanya pada jaringan internal), `alas-app` (Next.js pada port internal 3000/host 3001), dan `alas-nginx` (port host 2006). `ALAS_DB_PASSWORD` wajib diisi; Compose berhenti sebelum start jika nilainya tidak tersedia. Konfigurasi Nginx (`nginx/alas.conf`) secara ketat memblokir rute mock pengujian (`/api/mock/`) dengan HTTP 404 di lingkungan produksi. Workflow GitHub Actions membangun serta mendorong image GHCR ketika ada push ke `main`.
 
 ### Mengelola hero beranda
 
