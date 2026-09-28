@@ -18,10 +18,12 @@ vi.mock('@/shared/lib/db', () => ({
 }))
 
 describe('Kategori API and Lawet Hub Integration', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     vi.stubEnv('LAWET_API_URL', 'http://127.0.0.1:2002')
     cookieGet.mockReturnValue({ value: 'lawet-staff-token' } as any)
+    const { resetCategoriesCache } = await import('@/entities/jurnal/api/get-categories.action')
+    await resetCategoriesCache()
   })
 
   it('fetches categories from Lawet Hub config endpoint with bearer token', async () => {
@@ -128,5 +130,35 @@ describe('Kategori API and Lawet Hub Integration', () => {
     expect(data.status).toBe('ok')
     expect(data.data).toContain('mou')
     expect(data.data).toContain('sosialisasi')
+  })
+
+  it('falls back to the last successfully fetched categories from Lawet when subsequent fetch fails', async () => {
+    const { getCategoriesAction } = await import('@/entities/jurnal/api/get-categories.action')
+
+    // First fetch: Lawet Hub returns custom categories configured in platform_configs
+    const customLawetCategories = ['publikasi_khusus', 'agenda_pemilu', 'sidang_pelanggaran']
+    const fetchSuccess = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        kategori: customLawetCategories,
+      }),
+    })
+    vi.stubGlobal('fetch', fetchSuccess)
+    selectDistinctMock.mockReturnValue({
+      from: () => ({
+        where: () => Promise.resolve([]),
+      }),
+    })
+
+    const firstRun = await getCategoriesAction()
+    expect(firstRun).toEqual(customLawetCategories)
+
+    // Second fetch: Lawet Hub endpoint fails / offline, and local DB has no records
+    const fetchFailure = vi.fn().mockRejectedValue(new Error('Lawet Hub offline'))
+    vi.stubGlobal('fetch', fetchFailure)
+
+    const secondRun = await getCategoriesAction()
+    // Must match the last get from Lawet, NOT the static initial hardcoded array
+    expect(secondRun).toEqual(customLawetCategories)
   })
 })

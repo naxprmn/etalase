@@ -247,7 +247,7 @@ tags: (j.tags as string[]) || [],
     }));
 
   const localSubs: MyJurnalItem[] = canReview ? localJurnals
-    .filter(j => j.redaksi !== user.name && ['publish_pending', 'published', 'rejected'].includes(j.workflow_status as string))
+    .filter(j => j.redaksi !== user.name && (!user.division?.name || j.divisi === user.division.name) && ['publish_pending', 'published', 'rejected'].includes(j.workflow_status as string))
     .map(j => ({
       id: j.id,
       source_id: j.source_id,
