@@ -207,8 +207,9 @@ Endpoint visibility yang dipakai ALAS:
 
 | Method | Endpoint Lawet Hub | Tujuan |
 | --- | --- | --- |
-| `POST` | `/api/v1/auth/login` | Autentikasi awal; belum memakai dashboard JWT. |
-| `GET` | `/api/v1/auth/me` | Identitas dan role pengguna. |
+| `POST` | `/api/v1/auth/login` | Autentikasi awal; ALAS memvalidasi `has_alas_access` sebelum menerbitkan cookie sesi. |
+| `GET` | `/api/v1/auth/me` | Identitas, role, dan validasi kapabilitas `has_alas_access` pengguna. |
+| `GET` | `/api/v1/jurnal-alas/config/kategori` | Konfigurasi daftar kategori jurnal resmi untuk sinkronisasi taksonomi (ADR-0008). |
 | `GET` | `/api/v1/jurnal-alas/?page=1&limit=50` | Jurnal terbit yang sudah dicakup Lawet Hub berdasarkan pengguna/divisi. |
 | `GET` | `/api/v1/jurnal-alas/draft?limit=50` | Daftar draft yang boleh dilihat. |
 | `GET` | `/api/v1/jurnal-alas/approval-queue` | Antrean approval. |
