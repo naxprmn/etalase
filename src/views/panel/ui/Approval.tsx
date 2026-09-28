@@ -549,9 +549,15 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
                   setRejectError("");
                   setIsRejecting(true);
 
-                  await tolakJurnalAction(selectedItem.id, rejectReason);
+                  const targetId = selectedItem.source_id || selectedItem.id;
+                  const res = await tolakJurnalAction(targetId, rejectReason);
 
                   setIsRejecting(false);
+
+                  if (res && !res.success) {
+                    setRejectError(res.error || "Gagal mengirim penolakan.");
+                    return;
+                  }
 
                   setIsRejectModalOpen(false);
 
@@ -632,9 +638,15 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
                   setIsRejecting(true);
 
-                  await setujuJurnalAction(selectedItem.id);
+                  const targetId = selectedItem.source_id || selectedItem.id;
+                  const res = await setujuJurnalAction(targetId);
 
                   setIsRejecting(false);
+
+                  if (res && !res.success) {
+                    alert(res.error || "Gagal menyetujui jurnal.");
+                    return;
+                  }
 
                   setIsApproved(true);
 
