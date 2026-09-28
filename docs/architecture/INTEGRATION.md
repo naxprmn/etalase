@@ -138,6 +138,7 @@ Payload create jurnal bersifat strict dan divalidasi Zod:
 {
   "source_id": "UUID Lawet Hub",
   "judul": "string",
+  "ringkasan": null,
   "tanggal_kegiatan": "YYYY-MM-DD",
   "kategori": "string",
   "link_publikasi": null,

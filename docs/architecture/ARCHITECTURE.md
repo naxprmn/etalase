@@ -25,7 +25,7 @@ flowchart LR
 | Shared | `src/shared/` | Koneksi basis data, design tokens, dan komponen yang dipakai lintas area. |
 | Persistensi | `drizzle/` | Skema dan migrasi Drizzle. |
 
-Alias TypeScript `@/*` menunjuk ke `src/*`. Urutan layer adalah `app → views → widgets → features → entities → shared`; layer bawah tidak boleh mengimpor layer di atas dan satu feature tidak boleh mengimpor feature lain. Client component memakai suffix `.client.tsx`. Barrel `index.ts` hanya digunakan sebagai public API pada `entities` atau `shared`; aturan public API saat ini ditegakkan untuk `entities/lawet-user` dan diperluas secara bertahap.
+Alias TypeScript `@/*` menunjuk ke `src/*`. Urutan layer adalah `app → views → widgets → features → entities → shared`; layer bawah tidak boleh mengimpor layer di atas dan satu feature tidak boleh mengimpor feature lain. Client component memakai suffix `.client.tsx`. Barrel `index.ts` hanya digunakan sebagai public API pada `entities` atau `shared`; aturan public API telah ditegakkan untuk `entities/lawet-user`, `entities/pimpinan`, serta `entities/site-settings`.
 
 ## Alur Data
 
