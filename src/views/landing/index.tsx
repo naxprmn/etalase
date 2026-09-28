@@ -181,11 +181,11 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
   return (
     <QueryClientProvider client={queryClient}>
       {/* Sticky Header — appears only on scroll */}
-      <div className={`fixed top-0 left-0 w-full z-[100] pt-4 pb-2 transition-all duration-500 ${isScrolled ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
-        <div className="w-full max-w-[1429px] mx-auto px-4 md:px-10">
-          <div className="bg-white shadow-md rounded-[44.5px] h-[89px] px-8 flex items-center justify-between" style={{ fontFamily: 'Poppins' }}>
+      <div className={`fixed top-0 left-0 w-full z-[100] pt-2 md:pt-4 pb-2 transition-all duration-500 ${isScrolled ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}`}>
+        <div className="w-full max-w-[1429px] mx-auto px-3 md:px-10">
+          <div className="bg-white/95 backdrop-blur-md shadow-md rounded-[28px] md:rounded-[44.5px] h-[54px] md:h-[89px] px-4 md:px-8 flex items-center justify-between" style={{ fontFamily: 'Poppins' }}>
             <div className="flex items-center">
-              <img src="/assets/hero-logo-etalase.png" alt="ETALASE" className="h-[45px] object-contain" />
+              <img src="/assets/hero-logo-etalase.png" alt="ETALASE" className="h-[28px] md:h-[45px] object-contain" />
             </div>
             <div className="hidden lg:flex items-center gap-[60px]">
               <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="text-[#142B42] font-semibold text-[15px] relative">
@@ -197,17 +197,17 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
               <button onClick={() => document.getElementById('section-dokumentasi')?.scrollIntoView({behavior: 'smooth'})} className="text-[#5D6A77] font-medium text-[15px] hover:text-[#F7921C] transition-colors">Dokumentasi</button>
             </div>
             <button 
-              className="bg-[#F7921C] hover:bg-[#e08316] transition-colors text-white font-semibold text-[15px] w-[154px] h-[67px] rounded-[34px] flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.1)]"
+              className="bg-[#F7921C] hover:bg-[#e08316] transition-colors text-white font-semibold text-xs md:text-[15px] px-4 md:px-0 w-auto md:w-[154px] h-[36px] md:h-[67px] rounded-full md:rounded-[34px] flex items-center justify-center gap-1.5 md:gap-2 cursor-pointer shadow-sm active:scale-95"
               onClick={() => user ? (window.location.href = '/panel') : setIsLoginOpen(true)}
             >
               {user ? (
                 <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                   Panel
                 </>
               ) : (
                 <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                   Login
                 </>
               )}
@@ -324,7 +324,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
         <StatsSection />
 
         {/* SECTION 2.5 - CALENDAR */}
-        <div id="section-kalender" className="w-full pb-4">
+        <div id="section-kalender" className="w-full pb-4 scroll-mt-16 md:scroll-mt-24">
           <CalendarSection />
         </div>
 
@@ -332,20 +332,20 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
         <section
           id="section-arsip"
           ref={section3Ref}
-          className="relative w-full pb-4"
+          className="relative w-full pb-4 scroll-mt-16 md:scroll-mt-24"
         >
           <div className="max-w-[1440px] mx-auto px-4 md:px-10 pt-4">
             
               {/* Figma-Matched Search Bar Container */}
-              <div className="bg-white rounded-[20px] px-6 py-5 flex flex-col md:flex-row items-center justify-between mb-8 max-w-[1282px] mx-auto gap-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.03)]" style={{ fontFamily: 'Poppins' }}>
+              <div className="bg-white rounded-[18px] md:rounded-[20px] p-3 md:px-6 md:py-5 flex flex-col md:flex-row items-center justify-between mb-6 md:mb-8 max-w-[1282px] mx-auto gap-2.5 md:gap-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.03)]" style={{ fontFamily: 'Poppins' }}>
                 
                 {/* Search Input */}
-                <div className="flex-none h-[62px] w-full md:w-[604px] flex items-center px-6 bg-[#F8FAFC] border border-[#737272]/50 rounded-[20px] transition-colors focus-within:border-[#F7921C]">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3 shrink-0"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <div className="flex-none h-[48px] md:h-[62px] w-full md:w-[604px] flex items-center px-4 md:px-6 bg-[#F8FAFC] border border-[#737272]/50 rounded-[14px] md:rounded-[20px] transition-colors focus-within:border-[#F7921C]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2.5 md:mr-3 shrink-0"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                   <input 
                     type="text" 
-                    placeholder="Cari judul artikel, topik, penulis (contoh : parmas, netralitas, verifikasi)" 
-                    className="w-full bg-transparent border-none outline-none text-[#142B42] text-[14px] placeholder-[#9CA3AF]"
+                    placeholder="Cari artikel, topik, penulis..." 
+                    className="w-full bg-transparent border-none outline-none text-[#142B42] text-[13px] md:text-[14px] placeholder-[#9CA3AF]"
                     value={q}
                     onChange={(e) => setFilter(e.target.value, kategori, tahun)}
                     onKeyDown={(e) => {
@@ -357,20 +357,22 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                 </div>
                 
                 {/* Filters & Button Group */}
-                <div className="flex flex-col md:flex-row items-center justify-end gap-[16px] flex-1 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 md:gap-[16px] flex-1 w-full md:w-auto">
                   
-                  {/* Kategori Dropdown */}
-                    <div className="relative h-[62px] w-full md:max-w-[230px] flex-1 bg-[#F8FAFC] border border-[#737272]/50 rounded-[20px] transition-colors hover:border-[#F7921C]/50" ref={kategoriRef}>
+                  {/* Dropdowns side-by-side on mobile */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+                    {/* Kategori Dropdown */}
+                    <div className="relative h-[44px] md:h-[62px] w-1/2 sm:w-full md:max-w-[230px] flex-1 bg-[#F8FAFC] border border-[#737272]/50 rounded-[14px] md:rounded-[20px] transition-colors hover:border-[#F7921C]/50" ref={kategoriRef}>
                       <div 
-                        className="w-full h-full flex items-center justify-between px-6 cursor-pointer text-[#5D6A77] text-[14px] font-medium"
+                        className="w-full h-full flex items-center justify-between px-3 md:px-6 cursor-pointer text-[#5D6A77] text-[12px] md:text-[14px] font-medium"
                         onClick={() => { setIsKategoriOpen(!isKategoriOpen); setIsTahunOpen(false); }}
                       >
                         <span className="truncate">{kategori || "Semua Kategori"}</span>
-                        <svg className={`w-5 h-5 text-[#9CA3AF] transition-transform duration-200 ${isKategoriOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        <svg className={`w-4 h-4 md:w-5 md:h-5 text-[#9CA3AF] transition-transform duration-200 shrink-0 ${isKategoriOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                       </div>
                       
                       {isKategoriOpen && (
-                        <div className="absolute top-[calc(100%+8px)] left-0 min-w-full w-max bg-white border border-[#E2E8F0] rounded-[16px] shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="absolute top-[calc(100%+8px)] left-0 min-w-full w-max max-w-[90vw] bg-white border border-[#E2E8F0] rounded-[16px] shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                           <div className="py-2">
                             {[
                               { label: "Semua Kategori", val: "" },
@@ -379,7 +381,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                             ].map((opt) => (
                               <div 
                                 key={opt.label}
-                                className={`px-5 py-3 text-[14px] cursor-pointer transition-colors whitespace-nowrap ${kategori === opt.val ? 'bg-[#F7921C]/10 text-[#F7921C] font-bold' : 'text-[#475569] hover:bg-slate-50 font-medium'}`}
+                                className={`px-4 md:px-5 py-2.5 md:py-3 text-[13px] md:text-[14px] cursor-pointer transition-colors whitespace-nowrap ${kategori === opt.val ? 'bg-[#F7921C]/10 text-[#F7921C] font-bold' : 'text-[#475569] hover:bg-slate-50 font-medium'}`}
                                 onClick={() => {
                                   setFilter(q, opt.val, tahun);
                                   setIsKategoriOpen(false);
@@ -393,14 +395,14 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                       )}
                     </div>
   
-                  {/* Tahun Dropdown */}
-                    <div className="relative h-[62px] w-full md:max-w-[190px] flex-1 bg-[#F8FAFC] border border-[#737272]/50 rounded-[20px] transition-colors hover:border-[#F7921C]/50" ref={tahunRef}>
+                    {/* Tahun Dropdown */}
+                    <div className="relative h-[44px] md:h-[62px] w-1/2 sm:w-full md:max-w-[190px] flex-1 bg-[#F8FAFC] border border-[#737272]/50 rounded-[14px] md:rounded-[20px] transition-colors hover:border-[#F7921C]/50" ref={tahunRef}>
                       <div 
-                        className="w-full h-full flex items-center justify-between px-6 cursor-pointer text-[#5D6A77] text-[14px] font-medium"
+                        className="w-full h-full flex items-center justify-between px-3 md:px-6 cursor-pointer text-[#5D6A77] text-[12px] md:text-[14px] font-medium"
                         onClick={() => { setIsTahunOpen(!isTahunOpen); setIsKategoriOpen(false); }}
                       >
                         <span className="truncate">{tahun || "Semua Tahun"}</span>
-                        <svg className={`w-5 h-5 text-[#9CA3AF] transition-transform duration-200 ${isTahunOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        <svg className={`w-4 h-4 md:w-5 md:h-5 text-[#9CA3AF] transition-transform duration-200 shrink-0 ${isTahunOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                       </div>
                       
                       {isTahunOpen && (
@@ -413,7 +415,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                             ].map((opt) => (
                               <div 
                                 key={opt.label}
-                                className={`px-5 py-3 text-[14px] cursor-pointer transition-colors whitespace-nowrap ${tahun === opt.val ? 'bg-[#F7921C]/10 text-[#F7921C] font-bold' : 'text-[#475569] hover:bg-slate-50 font-medium'}`}
+                                className={`px-4 md:px-5 py-2.5 md:py-3 text-[13px] md:text-[14px] cursor-pointer transition-colors whitespace-nowrap ${tahun === opt.val ? 'bg-[#F7921C]/10 text-[#F7921C] font-bold' : 'text-[#475569] hover:bg-slate-50 font-medium'}`}
                                 onClick={() => {
                                   setFilter(q, kategori, opt.val);
                                   setIsTahunOpen(false);
@@ -426,17 +428,24 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                         </div>
                       )}
                     </div>
+                  </div>
   
                   {/* Search Button */}
                   <button 
                     onClick={() => document.getElementById('section-arsip')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="h-[62px] w-full md:w-[140px] flex-none bg-[#F7921C] rounded-[20px] flex items-center justify-center gap-2 text-white text-[15px] font-bold hover:bg-[#e08419] transition-all"
+                    className="h-[44px] md:h-[62px] w-full sm:w-auto md:w-[140px] px-6 flex-none bg-[#F7921C] rounded-[14px] md:rounded-[20px] flex items-center justify-center gap-2 text-white text-[13px] md:text-[15px] font-bold hover:bg-[#e08419] transition-all active:scale-95"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     Cari
                   </button>
                 </div>
               </div>
+
+            {/* Mobile swipe hint */}
+            <div className="md:hidden flex items-center justify-between px-2 mb-3 text-xs text-[#7B8EA0] font-medium">
+              <span>Arsip Jurnal Terbit</span>
+              <span className="flex items-center gap-1 text-[#F7921C] font-semibold">Geser ke samping &rarr;</span>
+            </div>
 
             {/* Jurnal Grid List */}
             <JurnalList
@@ -454,7 +463,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
         </section>
 
         {/* SECTION 4 - DOKUMENTASI KEGIATAN */}
-        <div id="section-dokumentasi">
+        <div id="section-dokumentasi" className="scroll-mt-16 md:scroll-mt-24">
           <DokumentasiSection photos={recentPhotos || []} />
         </div>
 
@@ -465,14 +474,15 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
           id={selectedJurnalId}
           isOpen={!!selectedJurnalId}
           onClose={() => setSelectedJurnalId(null)}
+          isLoggedIn={!!user}
         />
       </div>
 
       {/* Login Modal Overlay */}
       {isLoginOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 overflow-y-auto" onClick={() => setIsLoginOpen(false)}>
+        <div className="fixed inset-0 z-[110] flex justify-center p-4 bg-black/60 overflow-y-auto items-start md:items-center py-10" onClick={() => setIsLoginOpen(false)}>
           <div 
-            className="relative w-full max-w-[1306px] min-h-[840px] bg-white rounded-[64px] flex overflow-hidden shadow-2xl mx-auto flex-col md:flex-row" 
+            className="relative w-full max-w-[1306px] min-h-[auto] max-h-[90vh] bg-white rounded-[64px] flex overflow-hidden shadow-2xl mx-auto flex-col md:flex-row" 
             onClick={(e) => e.stopPropagation()} 
             style={{ fontFamily: 'Poppins' }}
           >
@@ -485,7 +495,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
             <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
               <img src="/assets/login-illustration.png" alt="Login Illustration" className="w-full max-w-[500px] object-contain" />
             </div>
-            <div className="w-full md:w-1/2 flex flex-col justify-center px-10 lg:px-24 py-12 relative bg-white">
+            <div className="w-full md:w-1/2 flex flex-col justify-center px-10 lg:px-24 py-12 relative bg-white overflow-y-auto">
               <div className="flex justify-center mb-10">
                 <img src="/assets/login-logo.png" alt="ETALASE" className="h-[120px] object-contain" />
               </div>
@@ -520,7 +530,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                         )}
                       </button>
                     </div>
-                    <div className="flex justify-between gap-4">
+                    <div className="flex justify-center gap-4 sm:gap-6">
                       {[0, 1, 2, 3].map((index) => (
                         <input 
                           key={index} 
@@ -530,7 +540,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                           value={pin[index]}
                           onChange={(e) => handlePinChange(index, e.target.value)}
                           onKeyDown={(e) => handlePinKeyDown(index, e)}
-                          className="w-[118px] h-[114px] bg-[#F2F5FF] rounded-[10px] text-center text-[40px] font-bold text-[#142B42] outline-none border-2 border-transparent focus:border-[#4F83F5] transition-colors [&::-ms-reveal]:hidden [&::-ms-clear]:hidden" 
+                          className="flex-1 aspect-square max-w-[100px] max-h-[100px] bg-[#F2F5FF] rounded-[16px] text-center text-[40px] font-bold text-[#142B42] outline-none border-2 border-transparent focus:border-[#4F83F5] transition-colors [&::-ms-reveal]:hidden [&::-ms-clear]:hidden" 
                         />
                       ))}
                     </div>
@@ -540,7 +550,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                         {loginError}
                       </div>
                     )}
-                    <div className="flex justify-end mt-4">
+                    <div className="flex justify-end mt-4 mb-8">
                       <button className="text-[#F14141] font-medium text-[14px] hover:underline">
                         lupa PIN
                       </button>

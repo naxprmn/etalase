@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import type { JurnalWorkspace } from '@/features/jurnal-saya/api/get-my-jurnals.action';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, CartesianGrid } from 'recharts';
-import { Search, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Search, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { deleteJurnalAction } from '@/features/jurnal-saya/api/delete.action';
 import { JurnalDetailModal } from '@/entities/jurnal/ui/jurnal-detail-modal.client';
@@ -52,18 +52,30 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
   const draft = allItems.filter(i => i.status === 'draft').length;
   const pending = allItems.filter(i => i.status === 'publish_pending').length;
 
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    allItems.forEach(item => {
+      if (item.tanggal_kegiatan) {
+        const d = new Date(item.tanggal_kegiatan);
+        if (!isNaN(d.getTime())) years.add(d.getFullYear());
+      }
+    });
+    if (years.size === 0) years.add(new Date().getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
+  }, [allItems]);
+
   const barData = useMemo(() => {
     const counts = new Array(12).fill(0);
     allItems.forEach(item => {
       if (item.tanggal_kegiatan) {
         const date = new Date(item.tanggal_kegiatan);
-        if (!isNaN(date.getTime()) && date.getFullYear() === new Date().getFullYear()) {
+        if (!isNaN(date.getTime()) && date.getFullYear() === chartYear) {
           counts[date.getMonth()] += 1;
         }
       }
     });
     return counts.map((count, i) => ({ name: i.toString(), value: count }));
-  }, [allItems]);
+  }, [allItems, chartYear]);
   
   const pieStatusData = useMemo(() => {
     return [
@@ -85,6 +97,21 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
       return [{name: 'Belum ada data', value: 1}];
     }
     return result;
+  }, [allItems]);
+
+  const pieStaffData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allItems.forEach(item => {
+      const name = item.owner_name || 'Tanpa Nama';
+      if (name.toLowerCase().includes('kasubag')) return;
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    const STAFF_COLORS = ['#6366F1', '#F87171', '#FBBF24', '#38BDF8', '#A78BFA', '#34D399'];
+    return Object.entries(counts).map(([name, value], index) => ({
+      name,
+      value,
+      color: STAFF_COLORS[index % STAFF_COLORS.length]
+    }));
   }, [allItems]);
 
   // Filtering Logic
@@ -125,7 +152,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
   const endItemIdx = Math.min(validCurrentPage * itemsPerPage, filteredItems.length);
 
   return (
-    <div className="flex-1 p-6 md:p-10 flex flex-col">
+    <div className="flex-1 min-w-0 p-6 md:p-10 flex flex-col w-full">
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-6 right-6 z-[200] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-white text-sm font-semibold transition-all animate-fade-in
@@ -134,9 +161,9 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
         </div>
       )}
       {/* Dashboard Top Section */}
-      <div className="flex flex-col lg:flex-row gap-6 mb-6">
+      <div className="flex flex-col md:flex-row gap-6 mb-6">
         {/* Left: 4 Metric Cards (2x2) */}
-        <div className="flex-1 grid grid-cols-2 gap-6">
+        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="bg-white rounded-[17px] border border-[#0F3E79] p-5 shadow-sm h-[160px] flex flex-col justify-between">
             <div>
               <h4 className="text-[#142B42] text-[13px] font-bold mb-4 flex items-center gap-2">
@@ -195,7 +222,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
         </div>
 
         {/* Right: Calendar */}
-        <div className="w-full lg:w-[35%] xl:w-[30%] flex">
+        <div className="w-full md:w-[320px] shrink-0 flex">
           <div className="bg-white rounded-[21px] border border-[#E5E7EB] shadow-[0_4px_20px_rgba(0,0,0,0.05)] w-full h-full flex flex-col overflow-hidden">
             {/* macOS Style Top Bar */}
             <div className="h-[28px] w-full bg-[#254360] flex items-center px-4 gap-2 shrink-0">
@@ -204,30 +231,30 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
               <div className="w-[10px] h-[10px] rounded-full bg-[#61C554]"></div>
             </div>
             
-            <div className="p-5 flex-1 flex flex-col">
+            <div className="p-5 flex-1 flex flex-col min-w-0 min-h-0">
               {/* Calendar Nav */}
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2">
+              <div className="flex justify-between items-center mb-6 gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   <button 
                     onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
-                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-0.5 hover:bg-gray-100 rounded-full transition-colors"
                   >
                     <ChevronLeft size={16} className="text-[#142B42]" />
                   </button>
-                  <h4 className="text-[12px] font-bold text-[#142B42] uppercase tracking-wider">
+                  <h4 className="text-[11px] font-bold text-[#142B42] uppercase tracking-wider min-w-[70px] text-center">
                     {MONTH_NAMES[calendarDate.getMonth()]}
                   </h4>
                   <button 
                     onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
-                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-0.5 hover:bg-gray-100 rounded-full transition-colors"
                   >
                     <ChevronRight size={16} className="text-[#142B42]" />
                   </button>
                 </div>
-                <div className="flex bg-[#F0F4F8] rounded-full p-1 items-center">
-                  <div className="text-[10px] px-3 py-1 font-bold text-[#7B8EA0] cursor-pointer hover:text-[#142B42]">Hari</div>
-                  <div className="text-[10px] px-3 py-1 font-bold text-[#7B8EA0] cursor-pointer hover:text-[#142B42]">Minggu</div>
-                  <div className="text-[10px] px-3 py-1 font-bold bg-[#254360] text-white rounded-full shadow-sm">Bulan</div>
+                <div className="flex bg-[#F0F4F8] rounded-full p-1 items-center shrink-0">
+                  <div className="text-[9px] px-2 py-1 font-bold text-[#7B8EA0] cursor-pointer hover:text-[#142B42]">Hari</div>
+                  <div className="text-[9px] px-2 py-1 font-bold text-[#7B8EA0] cursor-pointer hover:text-[#142B42]">Minggu</div>
+                  <div className="text-[9px] px-2 py-1 font-bold bg-[#254360] text-white rounded-full shadow-sm">Bulan</div>
                 </div>
               </div>
             
@@ -250,11 +277,11 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                 const hasPublished = allItems.some(j => j.tanggal_kegiatan && j.tanggal_kegiatan.startsWith(localISOTime) && j.status === 'published');
                 
                 return (
-                  <div key={localISOTime} className="flex flex-col items-center justify-center h-10">
+                  <div key={localISOTime} className="flex flex-col items-center justify-start pt-1 h-10 relative">
                     <button 
                       type="button"
                       onClick={() => setSelectedDate(isSelected ? null : localISOTime)}
-                      className={`h-7 w-7 rounded-full flex items-center justify-center text-[12px] transition-colors ${
+                      className={`h-7 w-7 rounded-full flex items-center justify-center text-[11.5px] transition-colors ${
                         isSelected ? 'bg-[#396094] text-white font-bold shadow-sm' : 
                         isToday ? 'bg-[#EEF2F6] text-[#396094] font-bold' : 
                         'text-[#142B42] hover:bg-[#F6F9FC] font-medium'
@@ -263,10 +290,10 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                       {date.getDate()}
                     </button>
                     {/* Activity Dots / Today Label */}
-                    <div className="h-2 flex items-center gap-[2px] mt-0.5">
-                      {isToday && <span className="text-[5px] font-bold text-[#396094]">HARI INI</span>}
+                    <div className="absolute bottom-[2px] w-full flex justify-center items-center gap-[2px]">
+                      {isToday && <span className="text-[6.5px] font-bold text-[#396094] uppercase tracking-tighter" style={{ transform: 'scale(0.85)', whiteSpace: 'nowrap' }}>HARI INI</span>}
                       {!isToday && hasDraft && <div className="w-1 h-1 rounded-full bg-[#F4BF4F]"></div>}
-                      {!isToday && hasPublished && <div className="w-2 h-1 rounded-full bg-[#F7921C]"></div>}
+                      {!isToday && hasPublished && <div className="w-1.5 h-1 rounded-full bg-[#F7921C]"></div>}
                     </div>
                   </div>
                 );
@@ -277,13 +304,13 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
         </div>
       </div>
 
-      {/* 3 Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+      {/* 4 Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         {/* Chart 1: Bar Chart */}
-        <div className="lg:col-span-2 bg-white rounded-[22px] border-[0.5px] border-black/10 p-5 shadow-sm h-[273px] flex flex-col">
+        <div className="bg-white rounded-[22px] border-[0.5px] border-black/10 p-5 shadow-sm h-[273px] flex flex-col min-w-0 min-h-0">
           <div className="flex justify-between items-center mb-4">
             <h4 className="text-sm font-semibold text-[#142B42]">Jumlah Jurnal Per Bulan</h4>
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded">2026 v</span>
+            <div className="relative inline-block"><select className="appearance-none text-xs bg-gray-100 pl-2 pr-5 py-1 rounded outline-none border border-transparent focus:border-[#4F83F5] focus:bg-white text-[#142B42] font-semibold cursor-pointer" value={chartYear} onChange={(e) => setChartYear(parseInt(e.target.value))}>{availableYears.map(yr => (<option key={yr} value={yr}>{yr}</option>))}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-[#142B42]"><ChevronDown size={12} strokeWidth={3} /></div></div>
           </div>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -297,7 +324,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
         </div>
 
         {/* Chart 2: Status Jurnal */}
-        <div className="bg-white rounded-[22px] border-[0.5px] border-black/10 p-5 shadow-sm h-[273px] flex flex-col">
+        <div className="bg-white rounded-[22px] border-[0.5px] border-black/10 p-5 shadow-sm h-[273px] flex flex-col min-w-0 min-h-0">
           <h4 className="text-sm font-semibold text-[#142B42] mb-2">Status Jurnal</h4>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -319,7 +346,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
         </div>
 
         {/* Chart 3: Kategori Jurnal */}
-        <div className="bg-white rounded-[22px] border-[0.5px] border-black/10 p-5 shadow-sm h-[273px] flex flex-col">
+        <div className="bg-white rounded-[22px] border-[0.5px] border-black/10 p-5 shadow-sm h-[273px] flex flex-col min-w-0 min-h-0">
           <h4 className="text-sm font-semibold text-[#142B42] mb-2">Kategori Jurnal</h4>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -337,12 +364,32 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
             </PieChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Chart 4: Staff Upload Jurnal */}
+        <div className="bg-white rounded-[22px] border-[0.5px] border-black/10 p-5 shadow-sm h-[273px] flex flex-col min-w-0 min-h-0">
+          <h4 className="text-sm font-semibold text-[#142B42] mb-2">Staff Upload Jurnal</h4>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={pieStaffData} cx="50%" cy="45%" innerRadius={0} outerRadius={70} dataKey="value">
+                {pieStaffData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+              </Pie>
+              <Tooltip />
+              <Legend 
+                verticalAlign="bottom" 
+                height={20}
+                iconType="circle"
+                iconSize={6}
+                wrapperStyle={{ fontSize: '9px', color: '#6b7280' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex-1 flex flex-col">
-        <div className="flex justify-between items-center mb-6">
-          <div className="relative w-[300px]">
+      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex-1 min-w-0 flex flex-col w-full">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+          <div className="relative w-full lg:w-[300px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input 
               type="text" 
@@ -352,22 +399,22 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
               className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500" 
             />
           </div>
-          <div className="flex bg-gray-100 rounded-full p-1">
+          <div className="flex bg-gray-100 rounded-full p-1 w-full sm:w-auto overflow-x-auto hide-scrollbar">
             <button 
               onClick={() => { setActiveTab('Semua'); setCurrentPage(1); }}
-              className={`px-5 py-1.5 text-sm rounded-full font-medium transition-colors ${activeTab === 'Semua' ? 'bg-[#142B42] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
+              className={`flex-1 sm:flex-none px-5 py-1.5 text-sm rounded-full font-medium transition-colors whitespace-nowrap ${activeTab === 'Semua' ? 'bg-[#142B42] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
             >
               Semua
             </button>
             <button 
               onClick={() => { setActiveTab('Draft'); setCurrentPage(1); }}
-              className={`px-5 py-1.5 text-sm rounded-full font-medium transition-colors ${activeTab === 'Draft' ? 'bg-[#142B42] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
+              className={`flex-1 sm:flex-none px-5 py-1.5 text-sm rounded-full font-medium transition-colors whitespace-nowrap ${activeTab === 'Draft' ? 'bg-[#142B42] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
             >
               Draft
             </button>
             <button 
               onClick={() => { setActiveTab('Terbit'); setCurrentPage(1); }}
-              className={`px-5 py-1.5 text-sm rounded-full font-medium transition-colors ${activeTab === 'Terbit' ? 'bg-[#142B42] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
+              className={`flex-1 sm:flex-none px-5 py-1.5 text-sm rounded-full font-medium transition-colors whitespace-nowrap ${activeTab === 'Terbit' ? 'bg-[#142B42] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
             >
               Terbit
             </button>
@@ -375,28 +422,28 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
         </div>
 
         <div className="overflow-x-auto min-h-[300px]">
-          <table className="w-full text-left text-sm text-gray-600">
+          <table className="w-full text-left text-sm text-gray-600 border border-gray-200/50">
             <thead>
-              <tr className="border-b border-gray-200/50 bg-[#F8FAFC]">
+              <tr className="border-b border-gray-200/50 bg-[#F8FAFC] divide-x divide-gray-200/50">
                 <th className="py-3 px-4 font-semibold">No</th>
                 <th className="py-3 px-4 font-semibold">Judul Jurnal</th>
-                <th className="py-3 px-4 font-semibold">Pembuat</th>
-                <th className="py-3 px-4 font-semibold">Tanggal</th>
-                <th className="py-3 px-4 font-semibold">Kategori</th>
-                <th className="py-3 px-4 font-semibold">Status</th>
-                <th className="py-3 px-4 font-semibold">Akses</th>
-                <th className="py-3 px-4 font-semibold text-center">Aksi</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Pembuat</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Tanggal</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Kategori</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Status</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Akses</th>
+                <th className="py-3 px-4 font-semibold text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {currentItems.length > 0 ? currentItems.map((item, idx) => {
                 const isPub = item.status === 'published';
                 return (
-                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50">
+                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50 divide-x divide-gray-100">
                   <td className="py-3 px-4">{(validCurrentPage - 1) * itemsPerPage + idx + 1}</td>
                   <td className="py-3 px-4 font-medium text-blue-900">{item.judul || 'Untitled'}</td>
-                  <td className="py-3 px-4">{item.owner_name || 'Staff'}</td>
-                  <td className="py-3 px-4">{item.tanggal_kegiatan || '-'}</td>
+                  <td className="py-3 px-4 whitespace-nowrap">{item.owner_name || 'Staff'}</td>
+                  <td className="py-3 px-4 whitespace-nowrap">{item.tanggal_kegiatan || '-'}</td>
                   <td className="py-3 px-4">
                     <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] rounded-full font-medium whitespace-nowrap">
                       {item.kategori || 'Umum'}
@@ -532,6 +579,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
         id={detailPopup} 
         isOpen={!!detailPopup} 
         onClose={() => setDetailPopup(null)} 
+        isLoggedIn={true}
       />
     </div>
   );

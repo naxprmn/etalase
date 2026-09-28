@@ -153,27 +153,30 @@ export const StatsModal = ({ isOpen, onClose, data, activeCard = 'overview' }: S
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm" style={{ fontFamily: 'Poppins' }}>
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/50 backdrop-blur-sm" style={{ fontFamily: 'Poppins' }}>
       <div 
         className="absolute inset-0"
         onClick={onClose}
       ></div>
       
-      {/* Modal Container - EXACT FIGMA DIMENSIONS */}
-      <div className="relative w-full max-w-[1277px] h-[660px] bg-[#F1F6FC] rounded-[52px] shadow-2xl flex flex-col p-10 md:p-12 overflow-hidden animate-in fade-in zoom-in duration-300">
+      {/* Modal Container */}
+      <div className="relative w-full max-w-[1277px] h-[92vh] sm:h-[660px] bg-[#F1F6FC] rounded-t-[32px] sm:rounded-[52px] shadow-2xl flex flex-col p-5 md:p-12 overflow-y-auto sm:overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300">
         
+        {/* Mobile Drag Indicator */}
+        <div className="sm:hidden w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-2 shrink-0"></div>
+
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute top-8 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 transition-colors text-[#142B42]"
+          className="absolute top-4 right-4 sm:top-8 sm:right-8 w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 transition-colors text-[#142B42] z-20"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
 
-        <div className="flex flex-col lg:flex-row gap-6 mt-2 h-full">
+        <div className="flex flex-col lg:flex-row gap-6 mt-2 h-full pb-6 sm:pb-0">
           {activeCard === 'overview' && (
             <>
               {/* Left Panel: Bar Chart */}
@@ -306,7 +309,22 @@ export const StatsModal = ({ isOpen, onClose, data, activeCard = 'overview' }: S
                           {mitraChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
-                          <LabelList dataKey="label" position="right" fill="#6B7280" fontSize={12} fontWeight={600} />
+                          <LabelList 
+                            content={(props: any) => {
+                              const { x, y, width, height, value } = props;
+                              // The "value" here is the raw numeric value from the Bar (e.g. 3)
+                              // We need to calculate percentage manually, or find the item
+                              const total = mitraChartData.reduce((acc, curr) => acc + curr.value, 0);
+                              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                              return (
+                                <g transform={`translate(${x + width + 8}, ${y + height / 2})`}>
+                                  <text x={0} y={0} fill="#6B7280" fontSize={12} fontWeight={600} dy={4} textAnchor="start">
+                                    {value} <tspan fill="#9CA3AF" fontWeight={400}>({percentage}%)</tspan>
+                                  </text>
+                                </g>
+                              );
+                            }}
+                          />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>

@@ -37,7 +37,7 @@ export function DokumenUploader({ value, onChange }: Props) {
 
     const res = await uploadDokumenAction(formData)
     if (res.success && res.data?.url) {
-      onChange([...value, { nama: namaDokumen, url: res.data.object_name, tipe: 'pdf', is_public: false }])
+      onChange([...value, { nama: namaDokumen, url: res.data.url, tipe: 'pdf', is_public: false }])
     } else {
       setError(res.error || 'Gagal mengunggah dokumen')
     }

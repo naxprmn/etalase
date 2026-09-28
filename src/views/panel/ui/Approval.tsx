@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import type { JurnalWorkspace } from '@/features/jurnal-saya/api/get-my-jurnals.action';
 
@@ -19,7 +19,15 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
   
 
-  const [selectedQueue, setSelectedQueue] = useState(subordinates[0]?.id || null);
+  const [selectedQueue, setSelectedQueue] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
@@ -29,23 +37,26 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
   const [isRejecting, setIsRejecting] = useState(false);
 
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectError, setRejectError] = useState("");
 
 
-  const selectedItem = subordinates.find(item => item.id === selectedQueue) || subordinates[0];
+
+  const selectedItem = subordinates.find(item => item.id === selectedQueue) || (!isMobile ? subordinates[0] : null);
 
 
 
   return (
 
-    <div className="px-8 pt-8 pb-8">
+    <div className="px-4 md:px-8 pt-4 md:pt-8 pb-8">
 
-      <div className="flex flex-row gap-8">
+      <div className="flex flex-col md:flex-row gap-8">
 
         
 
         {/* Left Column: Queue List */}
 
-        <div className="w-full md:w-[469px] flex flex-col shrink-0">
+        <div className={`w-full md:w-[469px] shrink-0 flex-col ${selectedItem ? 'hidden md:flex' : 'flex'}`}>
 
           <div className="mb-6">
 
@@ -88,7 +99,10 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
                   <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2.5 py-1 rounded-[6px]">Menunggu Review</span>
 
                   <span className="text-[#7B8EA0] text-[10px] font-medium">{item.tanggal_kegiatan || '-'}</span>
-
+                  
+                  <span className={`ml-auto text-[10px] font-bold px-2.5 py-1 rounded-[6px] border ${item.is_published ? 'border-[#22C55E] text-[#22C55E] bg-[#22C55E]/10' : 'border-[#EF4444] text-[#EF4444] bg-[#EF4444]/10'}`}>
+                    {item.is_published ? 'Publik' : 'Private'}
+                  </span>
                 </div>
 
                 <h4 className="text-[#142B42] text-[13px] font-bold mb-5 leading-snug">{item.judul || 'Untitled'}</h4>
@@ -131,13 +145,14 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
         {/* Right Column: Details Preview */}
 
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className={`flex-1 min-w-0 flex-col ${!selectedItem ? 'hidden md:flex' : 'flex'}`}>
 
           {selectedItem ? (
 
           <div className="rounded-[16px] border border-[#D9E2EC] bg-white flex flex-col overflow-hidden">
 
-            <div className="bg-[#0F3963] px-8 pt-8 pb-6 flex flex-col relative text-white rounded-t-[16px]">
+            <div className="bg-[#0F3963] px-8 pt-6 pb-6 flex flex-col relative text-white rounded-t-[16px]">
+              <button onClick={() => setSelectedQueue(null)} className="md:hidden flex items-center gap-2 text-white/80 hover:text-white mb-4 text-sm font-medium w-fit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg> Kembali</button>
 
               <h2 className="text-[20px] font-bold leading-[1.4] mb-8 pr-12 text-white">
 
@@ -145,7 +160,7 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
               </h2>
 
-              <div className="flex items-center gap-6 text-[11px] font-medium opacity-90 text-white">
+              <div className="flex items-center gap-6 text-[11px] font-medium opacity-90 text-white w-full">
 
                 <div className="flex items-center gap-2">
 
@@ -161,6 +176,20 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
                   {selectedItem.kategori}
 
+                </div>
+                
+                <div className={`ml-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border ${selectedItem.is_published ? 'border-green-400 text-green-400 bg-green-400/10' : 'border-red-400 text-red-400 bg-red-400/10'}`}>
+                  {selectedItem.is_published ? (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                      Publik
+                    </>
+                  ) : (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      Private
+                    </>
+                  )}
                 </div>
 
               </div>
@@ -465,21 +494,38 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
 
-          <div className="bg-white rounded-[10px] p-8 w-[734px] shadow-2xl flex flex-col">
+          <div className="bg-white rounded-[10px] p-8 w-[90%] max-w-[734px] shadow-2xl flex flex-col">
 
             <h2 className="text-[#142B42] text-[27px] font-bold mb-3">Tolak Jurnal ini?</h2>
 
             <p className="text-[#5D6A77] text-[16px] leading-relaxed mb-6">
 
-              Jurnal <span className="font-bold text-[#142B42]">{selectedItem.judul}</span> akan dikembalikan ke staf pengaju untuk direvisi.
+              Jurnal <span className="font-bold text-[#142B42]">{selectedItem.judul}</span> akan dikembalikan ke staf pengaju untuk direvisi. Sertakan alasan agar staf tahu apa yang perlu diperbaiki.
 
             </p>
+
+            <div className="flex flex-col mb-6">
+              <label className="text-[#142B42] text-[16px] font-bold mb-2">Catatan Pengembalian</label>
+              <textarea 
+                className={`w-full border ${rejectError ? 'border-red-500 focus:border-red-500' : 'border-[#E2E8F0] focus:border-[#0091FF]'} rounded-[6px] p-3 text-[14px] outline-none min-h-[140px] resize-none transition-colors`}
+                placeholder="Jelaskan bagian yang perlu diperbaiki...."
+                value={rejectReason}
+                onChange={(e) => {
+                  setRejectReason(e.target.value);
+                  if (rejectError) setRejectError("");
+                }}
+              />
+              {rejectError && <span className="text-red-500 text-[12px] mt-1">{rejectError}</span>}
+            </div>
 
             <div className="flex justify-end gap-3">
 
               <button 
 
-                onClick={() => setIsRejectModalOpen(false)}
+                onClick={() => {
+                  setIsRejectModalOpen(false);
+                  setRejectError("");
+                }}
 
                 disabled={isRejecting}
 
@@ -495,9 +541,15 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
                 onClick={async () => {
 
+                  if (!rejectReason.trim()) {
+                    setRejectError("Harap isi catatan pengembalian.");
+                    return;
+                  }
+                  
+                  setRejectError("");
                   setIsRejecting(true);
 
-                  await tolakJurnalAction(selectedItem.id);
+                  await tolakJurnalAction(selectedItem.id, rejectReason);
 
                   setIsRejecting(false);
 
@@ -533,15 +585,30 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
 
-          <div className="bg-white rounded-[10px] p-8 w-[734px] shadow-2xl flex flex-col">
+          <div className="bg-white rounded-[24px] p-8 w-[90%] max-w-[734px] shadow-2xl flex flex-col">
+
+            <div className="w-[56px] h-[56px] bg-[#E1F3EA] rounded-full flex items-center justify-center mb-6 shrink-0">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F9347" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
 
             <h2 className="text-[#142B42] text-[27px] font-bold mb-3">Setujui Jurnal ini?</h2>
 
             <p className="text-[#5D6A77] text-[16px] leading-relaxed mb-6">
 
-              Anda akan menyetujui <span className="font-bold">{selectedItem.judul}</span>.
+              Anda akan menyetujui <span className="font-bold text-[#142B42]">{selectedItem.judul}</span>. Setelah disetujui, jurnal ini terkunci dan tidak dapat diubah lagi oleh siapa pun.
 
             </p>
+
+            <div className="w-full bg-[#EEF1F6] border border-[#ABABAB] rounded-[10px] p-6 flex flex-col gap-5 mb-8">
+              <div className="flex justify-between items-center text-[16px]">
+                <span className="text-[#5D6A77]">Diajukan oleh</span>
+                <span className="font-bold text-[#5D6A77]">Staff {selectedItem.divisi || 'HUMAS'}</span>
+              </div>
+              <div className="flex justify-between items-center text-[16px]">
+                <span className="text-[#5D6A77]">Tanggal Kegiatan</span>
+                <span className="font-bold text-[#5D6A77]">{selectedItem.tanggal_kegiatan ? new Date(selectedItem.tanggal_kegiatan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</span>
+              </div>
+            </div>
 
             <div className="flex justify-end gap-3">
 
@@ -598,6 +665,10 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
   );
 
 }
+
+
+
+
 
 
 

@@ -4,9 +4,15 @@ import { db } from '@/shared/lib/db'
 import { eq } from 'drizzle-orm'
 import { jurnal } from '../../../../drizzle/schema'
 import { revalidatePath } from 'next/cache'
+import { getMeAction } from '@/entities/lawet-user/api/get-current-user.action'
+import { canApproveJurnal } from '@/entities/lawet-user/lib/is-admin'
 
 export async function setujuJurnalAction(id: string) {
   try {
+    const user = await getMeAction();
+    if (!user || !canApproveJurnal(user)) {
+      return { success: false, error: 'Akses ditolak: Anda tidak memiliki wewenang.' };
+    }
     await db.update(jurnal).set({ 
       workflow_status: 'published',
       is_published: true 
@@ -18,11 +24,16 @@ export async function setujuJurnalAction(id: string) {
   }
 }
 
-export async function tolakJurnalAction(id: string) {
+export async function tolakJurnalAction(id: string, reason?: string) {
   try {
+    const user = await getMeAction();
+    if (!user || !canApproveJurnal(user)) {
+      return { success: false, error: 'Akses ditolak: Anda tidak memiliki wewenang.' };
+    }
     await db.update(jurnal).set({ 
       workflow_status: 'rejected',
-      is_published: false
+      is_published: false,
+      workflow_notes: reason || null
     }).where(eq(jurnal.id, id));
     revalidatePath('/panel');
     return { success: true };
