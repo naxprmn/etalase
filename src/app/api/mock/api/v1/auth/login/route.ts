@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { isMockAllowed, mockForbiddenResponse } from '../../../guard'
+import { isMockAllowed, mockForbiddenResponse } from '../../../../guard'
 
 // Mock endpoint for authentication when running ALAS standalone without Lawet Hub
 export async function POST(request: Request) {

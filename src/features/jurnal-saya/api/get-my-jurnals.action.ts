@@ -221,15 +221,19 @@ export async function getJurnalWorkspaceAction(): Promise<JurnalWorkspace> {
   const { jurnal } = await import('../../../../drizzle/schema');
   const { eq, or, and, inArray } = await import('drizzle-orm');
 
-  const queryConditions = [eq(jurnal.redaksi, user.name)];
+  const queryConditions: any[] = [eq(jurnal.redaksi, user.name)];
   if (canReview) {
     const subConds = [inArray(jurnal.workflow_status, ['publish_pending', 'published', 'rejected'])];
     if (user.division?.name) {
       subConds.push(eq(jurnal.divisi, user.division.name));
     }
-    queryConditions.push(and(...subConds));
+    const subCondition = and(...subConds);
+    if (subCondition) {
+      queryConditions.push(subCondition);
+    }
   }
-  const localJurnals = await db.select().from(jurnal).where(or(...queryConditions)).limit(200);
+  const whereClause = queryConditions.length > 1 ? or(...queryConditions) : queryConditions[0];
+  const localJurnals = await db.select().from(jurnal).where(whereClause).limit(200);
 
   const localMine: MyJurnalItem[] = localJurnals
     .filter(j => j.redaksi === user.name)
