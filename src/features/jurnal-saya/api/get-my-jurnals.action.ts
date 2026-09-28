@@ -219,7 +219,17 @@ export async function getJurnalWorkspaceAction(): Promise<JurnalWorkspace> {
   // Fetch local ALAS DB records
   const { db } = await import('@/shared/lib/db');
   const { jurnal } = await import('../../../../drizzle/schema');
-  const localJurnals = await db.select().from(jurnal);
+  const { eq, or, and, inArray } = await import('drizzle-orm');
+
+  const queryConditions = [eq(jurnal.redaksi, user.name)];
+  if (canReview) {
+    const subConds = [inArray(jurnal.workflow_status, ['publish_pending', 'published', 'rejected'])];
+    if (user.division?.name) {
+      subConds.push(eq(jurnal.divisi, user.division.name));
+    }
+    queryConditions.push(and(...subConds));
+  }
+  const localJurnals = await db.select().from(jurnal).where(or(...queryConditions)).limit(200);
 
   const localMine: MyJurnalItem[] = localJurnals
     .filter(j => j.redaksi === user.name)
