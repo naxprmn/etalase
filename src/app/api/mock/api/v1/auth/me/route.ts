@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
+import { isMockAllowed, mockForbiddenResponse } from '../../../guard';
 
 // Mock endpoint for Playwright E2E tests to bypass Lawet Hub auth
 export async function GET() {
+  if (!isMockAllowed()) {
+    return mockForbiddenResponse();
+  }
   return NextResponse.json({
     id: 'test-user-id',
     name: 'Test Staf ALAS',
