@@ -4,10 +4,12 @@ import { useRouter } from 'next/navigation'
 import JurnalSaya from './JurnalSaya'
 import KelolaJurnal from './KelolaJurnal'
 import Approval from './Approval'
-import type { LawetUser } from '@/entities/lawet-user/model/lawet-user'
+import type { LawetUser } from '@/entities/lawet-user'
 import { submitJurnalAction } from '@/entities/jurnal/api/submit-jurnal.action'
+import { uploadFotoAction, uploadDokumenAction } from '@/entities/jurnal/api/upload-media.action'
 import { getCategoryLabel } from '@/shared/ui/colors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
 
 const queryClient = new QueryClient()
 
@@ -185,8 +187,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
     setFotos(fotos.filter((_, i) => i !== index));
   }
   const addFoto = () => {
-    // Mock addition
-    setFotos([...fotos, 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=200']);
+    fotoInputRef.current?.click();
   }
 
   const [dragActiveFoto, setDragActiveFoto] = React.useState(false);
@@ -196,14 +197,16 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
     const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     const newFotos: string[] = [];
     for (const file of validFiles) {
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-      newFotos.push(dataUrl);
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await uploadFotoAction(formData);
+      if (res.success && res.data?.url) {
+        newFotos.push(res.data.url);
+      } else {
+        showToast(res.error || 'Gagal mengunggah foto ke server.', 'error');
+      }
     }
-    if(newFotos.length > 0) setFotos(prev => [...prev, ...newFotos]);
+    if (newFotos.length > 0) setFotos(prev => [...prev, ...newFotos]);
   };
 
   const handleDragFoto = (e: React.DragEvent) => {
@@ -226,8 +229,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
     setDocs(docs.filter((_, i) => i !== index));
   }
   const addDoc = () => {
-    // Mock addition
-    setDocs([...docs as any, { nama: `Lampiran_${docs.length + 1}.pdf`, url: '#' }]);
+    docInputRef.current?.click();
   }
 
   const [dragActiveDoc, setDragActiveDoc] = React.useState(false);
@@ -237,14 +239,16 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
     const validFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
     const newDocs: {nama: string, url: string}[] = [];
     for (const file of validFiles) {
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-      newDocs.push({ nama: file.name, url: dataUrl });
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await uploadDokumenAction(formData);
+      if (res.success && res.data?.url) {
+        newDocs.push({ nama: file.name, url: res.data.url });
+      } else {
+        showToast(res.error || 'Gagal mengunggah dokumen ke server.', 'error');
+      }
     }
-    if(newDocs.length > 0) setDocs(prev => [...prev, ...newDocs]);
+    if (newDocs.length > 0) setDocs(prev => [...prev, ...newDocs]);
   };
 
   const handleDragDoc = (e: React.DragEvent) => {
