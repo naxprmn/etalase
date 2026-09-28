@@ -59,8 +59,8 @@ export async function getJurnalYears(): Promise<number[]> {
 
 /** Hitung analitik jurnal lengkap untuk tahun tertentu */
 export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAnalytics> {
-  // 1. Kategori
-  const catRows = await db
+  // 1. Kategori Query
+  const catQuery = db
     .select({
       kategori: jurnal.kategori,
       total: sql<number>`COUNT(*)::int`,
@@ -69,17 +69,14 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
     .where(
       and(
         eq(jurnal.is_published, true),
-          eq(jurnal.workflow_status, 'published'),
+        eq(jurnal.workflow_status, 'published'),
         sql`EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}`
       )
     )
     .groupBy(jurnal.kategori)
 
-  const stats: Record<string, number> = Object.fromEntries(catRows.map(r => [r.kategori, r.total]))
-  const totalKegiatan = catRows.reduce((acc, r) => acc + r.total, 0)
-
-  // 2. Tren Bulanan (1 - 12)
-  const monthRows = await db
+  // 2. Tren Bulanan (1 - 12) Query
+  const monthQuery = db
     .select({
       month: sql<number>`EXTRACT(MONTH FROM ${jurnal.tanggal_kegiatan})::int`,
       total: sql<number>`COUNT(*)::int`,
@@ -88,11 +85,114 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
     .where(
       and(
         eq(jurnal.is_published, true),
-          eq(jurnal.workflow_status, 'published'),
+        eq(jurnal.workflow_status, 'published'),
         sql`EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}`
       )
     )
     .groupBy(sql`EXTRACT(MONTH FROM ${jurnal.tanggal_kegiatan})`)
+
+  // 2.5 Tren 7 Hari Terakhir Query
+  const last7DaysQuery = db.execute(sql`
+    WITH last_7_days AS (
+      SELECT current_date - generate_series(6, 0, -1) AS d
+    )
+    SELECT 
+      l.d,
+      COALESCE(COUNT(j.id), 0)::int as total
+    FROM last_7_days l
+    LEFT JOIN ${jurnal} j ON DATE(j.tanggal_kegiatan) = l.d AND j.is_published = true AND j.workflow_status = 'published'
+    GROUP BY l.d
+    ORDER BY l.d ASC
+  `)
+
+  // 3. Divisi Query
+  const divQuery = db
+    .select({
+      divisi: sql<string>`COALESCE(NULLIF(TRIM(${jurnal.divisi}), ''), 'Umum / Sekretariat')`,
+      total: sql<number>`COUNT(*)::int`,
+    })
+    .from(jurnal)
+    .where(
+      and(
+        eq(jurnal.is_published, true),
+        eq(jurnal.workflow_status, 'published'),
+        sql`EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}`
+      )
+    )
+    .groupBy(sql`COALESCE(NULLIF(TRIM(${jurnal.divisi}), ''), 'Umum / Sekretariat')`)
+
+  // 4. Publikasi Media Query
+  const mediaQuery = db
+    .select({
+      link: jurnal.link_publikasi,
+    })
+    .from(jurnal)
+    .where(
+      and(
+        eq(jurnal.is_published, true),
+        eq(jurnal.workflow_status, 'published'),
+        sql`EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}`,
+        sql`${jurnal.link_publikasi} IS NOT NULL AND TRIM(${jurnal.link_publikasi}) != ''`
+      )
+    )
+
+  // 5. Total Mitra Query
+  const partnerQuery = db.execute(sql`
+    SELECT 
+      CASE 
+        WHEN jsonb_typeof(partner) = 'string' THEN partner#>>'{}'
+        WHEN jsonb_typeof(partner) = 'object' THEN COALESCE(partner->>'instansi', partner->>'nama')
+        ELSE NULL
+      END as val
+    FROM ${jurnal},
+    jsonb_array_elements(
+      CASE
+        WHEN jsonb_typeof(${jurnal.pihak_terkait}) = 'array' THEN ${jurnal.pihak_terkait}
+        ELSE '[]'::jsonb
+      END
+    ) AS partner
+    WHERE ${jurnal.is_published} = true
+      AND ${jurnal.workflow_status} = 'published'
+      AND EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}
+  `)
+
+  // 6. Recent Highlights Query
+  const highlightQuery = db
+    .select({
+      id: jurnal.id,
+      judul: jurnal.judul,
+      tanggal_kegiatan: jurnal.tanggal_kegiatan,
+      kategori: jurnal.kategori,
+      dokumentasi: jurnal.dokumentasi,
+      link_publikasi: jurnal.link_publikasi,
+    })
+    .from(jurnal)
+    .where(
+      and(
+        eq(jurnal.is_published, true),
+        eq(jurnal.workflow_status, 'published'),
+        sql`EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}`
+      )
+    )
+    .orderBy(sql`${jurnal.tanggal_kegiatan} DESC`, sql`${jurnal.id} DESC`)
+    .limit(4)
+
+  // Execute all 7 analytical queries concurrently
+  const [catRows, monthRows, last7DaysRows, divRows, mediaRows, partnerRes, highlightRows] = await Promise.all([
+    catQuery,
+    monthQuery,
+    last7DaysQuery,
+    divQuery,
+    mediaQuery,
+    partnerQuery.catch((e) => {
+      console.error('Error fetching mitra:', e)
+      return { rows: [] } as any
+    }),
+    highlightQuery,
+  ])
+
+  const stats: Record<string, number> = Object.fromEntries(catRows.map(r => [r.kategori, r.total]))
+  const totalKegiatan = catRows.reduce((acc, r) => acc + r.total, 0)
 
   const monthMap = new Map<number, number>()
   for (const r of monthRows) {
@@ -106,24 +206,8 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
     }
   })
 
-
-  // 2.5 Tren 7 Hari Terakhir
-  const last7DaysRows = await db.execute(sql`
-    WITH last_7_days AS (
-      SELECT current_date - generate_series(6, 0, -1) AS d
-    )
-    SELECT 
-      l.d,
-      COALESCE(COUNT(j.id), 0)::int as total
-    FROM last_7_days l
-    LEFT JOIN ${jurnal} j ON DATE(j.tanggal_kegiatan) = l.d AND j.is_published = true
-    GROUP BY l.d
-    ORDER BY l.d ASC
-  `)
-  
   const daysOfWeek = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
   const daily_trend: DailyTrendItem[] = []
-  
   if (last7DaysRows && last7DaysRows.rows) {
     for (const row of last7DaysRows.rows) {
       const d = new Date(row.d as string)
@@ -134,53 +218,18 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
     }
   }
 
-  // 3. Divisi
-  const divRows = await db
-    .select({
-      divisi: sql<string>`COALESCE(NULLIF(TRIM(${jurnal.divisi}), ''), 'Umum / Sekretariat')`,
-      total: sql<number>`COUNT(*)::int`,
-    })
-    .from(jurnal)
-    .where(
-      and(
-        eq(jurnal.is_published, true),
-          eq(jurnal.workflow_status, 'published'),
-        sql`EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}`
-      )
-    )
-    .groupBy(sql`COALESCE(NULLIF(TRIM(${jurnal.divisi}), ''), 'Umum / Sekretariat')`)
-
   const division_stats: Record<string, number> = Object.fromEntries(divRows.map(r => [r.divisi, r.total]))
 
-    // 4. Publikasi Media & Media Stats
   const media_stats: Record<string, number> = {
     'Pendidikan': 0,
     'Pemda': 0,
     'Swasta': 0,
     'Lainnya': 0
   }
-
-  const mediaRows = await db
-    .select({
-      link: jurnal.link_publikasi,
-    })
-    .from(jurnal)
-    .where(
-      and(
-        eq(jurnal.is_published, true),
-          eq(jurnal.workflow_status, 'published'),
-        sql`EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}`,
-        sql`${jurnal.link_publikasi} IS NOT NULL AND TRIM(${jurnal.link_publikasi}) != ''`
-      )
-    )
-
   const published_media_count = mediaRows.length
-
   for (const row of mediaRows) {
     if (!row.link) continue
     const url = row.link.toLowerCase()
-    
-    // Smart domain detection
     if (url.includes('.go.id') || url.includes('bawaslu') || url.includes('kpu') || url.includes('kebumenkab') || url.includes('jatengprov')) {
       media_stats['Pemda']++
     } else if (url.includes('.ac.id') || url.includes('.sch.id') || url.includes('.edu') || url.includes('universitas') || url.includes('kampus')) {
@@ -192,7 +241,6 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
     }
   }
 
-    // 5. Total Mitra Unik (dari pihak_terkait) & Mitra Stats
   let total_mitra = 0
   const mitra_stats: Record<string, number> = {
     'Pemerintah Daerah': 0,
@@ -200,55 +248,25 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
     'Organisasi Masyarakat': 0,
     'Swasta / Lainnya': 0
   }
-
-  try {
-    const partnerRes: any = await db.execute(sql`
-      SELECT 
-        CASE 
-          WHEN jsonb_typeof(partner) = 'string' THEN partner#>>'{}'
-          WHEN jsonb_typeof(partner) = 'object' THEN COALESCE(partner->>'instansi', partner->>'nama')
-          ELSE NULL
-        END as val
-      FROM ${jurnal},
-      jsonb_array_elements(
-        CASE
-          WHEN jsonb_typeof(${jurnal.pihak_terkait}) = 'array' THEN ${jurnal.pihak_terkait}
-          ELSE '[]'::jsonb
-        END
-      ) AS partner
-      WHERE ${jurnal.is_published} = true
-        AND ${jurnal.workflow_status} = 'published'
-        AND EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}
-    `)
-    
+  if (partnerRes && partnerRes.rows) {
     const uniqueMitras = new Set<string>()
-    
-    if (partnerRes && partnerRes.rows) {
-      for (const row of partnerRes.rows) {
-        const val = (row.val || '').toString().trim().toLowerCase()
-        if (!val) continue
-        uniqueMitras.add(val)
-        
-        // Categorize
-        if (val.match(/pemda|dinas|pemerintah|bawaslu|kpu|kementerian|badan|desa|camat|kab|provinsi/i)) {
-          mitra_stats['Pemerintah Daerah']++
-        } else if (val.match(/sekolah|universitas|kampus|institut|akademi|sma|smp|sd|tk|politeknik|madrasah/i)) {
-          mitra_stats['Instansi Pendidikan']++
-        } else if (val.match(/lsm|ormas|forum|komunitas|yayasan|pemuda|masyarakat|pkk|karang taruna/i)) {
-          mitra_stats['Organisasi Masyarakat']++
-        } else {
-          mitra_stats['Swasta / Lainnya']++
-        }
+    for (const row of partnerRes.rows) {
+      const val = (row.val || '').toString().trim().toLowerCase()
+      if (!val) continue
+      uniqueMitras.add(val)
+      if (val.match(/pemda|dinas|pemerintah|bawaslu|kpu|kementerian|badan|desa|camat|kab|provinsi/i)) {
+        mitra_stats['Pemerintah Daerah']++
+      } else if (val.match(/sekolah|universitas|kampus|institut|akademi|sma|smp|sd|tk|politeknik|madrasah/i)) {
+        mitra_stats['Instansi Pendidikan']++
+      } else if (val.match(/lsm|ormas|forum|komunitas|yayasan|pemuda|masyarakat|pkk|karang taruna/i)) {
+        mitra_stats['Organisasi Masyarakat']++
+      } else {
+        mitra_stats['Swasta / Lainnya']++
       }
     }
-    
     total_mitra = uniqueMitras.size
-  } catch (e) {
-    console.error('Error fetching mitra:', e)
-    total_mitra = 0
   }
 
-  // Top Kategori
   let topCategory: KpiSummary['top_category'] = null
   if (catRows.length > 0 && totalKegiatan > 0) {
     const sorted = [...catRows].sort((a, b) => b.total - a.total)
@@ -266,27 +284,6 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
     published_media_count,
     top_category: topCategory,
   }
-
-  // 6. Recent Highlights (Max 4 kegiatan terbaru)
-  const highlightRows = await db
-    .select({
-      id: jurnal.id,
-      judul: jurnal.judul,
-      tanggal_kegiatan: jurnal.tanggal_kegiatan,
-      kategori: jurnal.kategori,
-      dokumentasi: jurnal.dokumentasi,
-      link_publikasi: jurnal.link_publikasi,
-    })
-    .from(jurnal)
-    .where(
-      and(
-        eq(jurnal.is_published, true),
-          eq(jurnal.workflow_status, 'published'),
-        sql`EXTRACT(YEAR FROM ${jurnal.tanggal_kegiatan}) = ${year}`
-      )
-    )
-    .orderBy(sql`${jurnal.tanggal_kegiatan} DESC`, sql`${jurnal.id} DESC`)
-    .limit(4)
 
   const recent_highlights: ActivityHighlight[] = highlightRows.map(r => {
     const docs = Array.isArray(r.dokumentasi) ? r.dokumentasi : []
