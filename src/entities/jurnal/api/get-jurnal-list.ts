@@ -17,17 +17,6 @@ export function encodeJurnalCursor(item: CursorItem): string {
   return Buffer.from(`${item.tanggal_kegiatan}|${item.id}`).toString('base64url')
 }
 
-function decodeJurnalCursor(cursor: string): CursorItem | null {
-  try {
-    const [tanggal_kegiatan, id] = Buffer.from(cursor, 'base64url').toString('utf8').split('|')
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal_kegiatan) || !/^[0-9a-f-]{36}$/i.test(id)) {
-      return null
-    }
-    return { tanggal_kegiatan, id }
-  } catch {
-    return null
-  }
-}
 
 export async function getJurnalList({ q = '', kategori = '', cursor = '', limit = 20, date = '', tahun = '' }: GetJurnalListParams) {
   let conditions = [eq(jurnal.is_published, true), eq(jurnal.workflow_status, 'published')]

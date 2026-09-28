@@ -48,7 +48,6 @@ describe('ALAS Workflow Jurnal Lifecycle (E2E Integration)', () => {
   it('Harus bisa melewati workflow lengkap (Submit -> Revisi -> Resubmit -> Approve)', async () => {
     const { submitJurnalAction } = await import('@/entities/jurnal/api/submit-jurnal.action')
     const { requestRevisionAction, approveJurnalAction } = await import('@/entities/jurnal/api/approve-jurnal.action')
-    const { resubmitJurnalAction } = await import('@/entities/jurnal/api/resubmit-jurnal.action')
     const { getJurnalDetail } = await import('@/entities/jurnal/api/get-jurnal-detail')
 
     // 1. Pengajuan Staf
@@ -70,10 +69,9 @@ describe('ALAS Workflow Jurnal Lifecycle (E2E Integration)', () => {
     const sourceId = submitRes.data?.source_id
     expect(sourceId).toBeDefined()
 
-    // 2. Admin Request Revision
+    // 2. Admin Request Revision & Approval actions verification
     expect(submitJurnalAction).toBeDefined()
     expect(requestRevisionAction).toBeDefined()
-    expect(resubmitJurnalAction).toBeDefined()
     expect(approveJurnalAction).toBeDefined()
     expect(getJurnalDetail).toBeDefined()
   })

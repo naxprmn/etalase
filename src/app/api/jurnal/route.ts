@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { encodeJurnalCursor, getJurnalList } from '@/entities/jurnal/api/get-jurnal-list'
+import { getJurnalList } from '@/entities/jurnal/api/get-jurnal-list'
 
 export async function GET(request: NextRequest) {
   try {
