@@ -78,6 +78,7 @@ export async function upsertJurnal(payload: JurnalPayload, database: DatabaseExe
     redaksi: payload.redaksi || null,
     divisi: payload.divisi || null,
     is_published: true, // Default to true on publish sync
+    workflow_status: 'published',
     synced_at: new Date(),
     updated_at: new Date()
   }
