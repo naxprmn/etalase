@@ -67,7 +67,6 @@ describe('Jurnal Stats & Analytics API Query Integration', () => {
     // 1. Backward compatibility: stats dictionary
     expect(res).toBeDefined()
     expect(res.stats).toBeDefined()
-    console.log(res.stats)
     expect(res.stats.mou).toBeGreaterThanOrEqual(1)
     expect(res.stats.audiensi).toBeGreaterThanOrEqual(1)
 
