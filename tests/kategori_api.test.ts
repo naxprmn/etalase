@@ -120,7 +120,7 @@ describe('Kategori API and Lawet Hub Integration', () => {
       }),
     })
 
-    const { GET } = await import('@/app/api/jurnal/kategori/route')
+    const { GET } = await import('../src/app/api/jurnal/kategori/route')
     const response = await GET()
     const data = await response.json()
 
