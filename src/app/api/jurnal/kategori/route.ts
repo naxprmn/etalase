@@ -1,19 +1,12 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/shared/lib/db'
-import { jurnal } from '../../../../../drizzle/schema'
-import { eq } from 'drizzle-orm'
+import { getCategoriesAction } from '@/entities/jurnal/api/get-categories.action'
 
 export async function GET() {
   try {
-    const rows = await db
-      .selectDistinct({ kategori: jurnal.kategori })
-      .from(jurnal)
-      .where(eq(jurnal.is_published, true))
-
-    const categories = rows.map(r => r.kategori)
+    const categories = await getCategoriesAction()
     return NextResponse.json({
       status: 'ok',
-      data: categories
+      data: categories,
     })
   } catch (error: any) {
     return NextResponse.json(

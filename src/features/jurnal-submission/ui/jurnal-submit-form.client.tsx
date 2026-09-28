@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { submitJurnalAction } from '@/entities/jurnal/api/submit-jurnal.action'
 import { JurnalSubmissionPayload } from '@/entities/jurnal/model/submission-schema'
+import { getCategoryLabel } from '@/shared/ui/colors'
 import { FileText, Calendar, Tag, Send, ArrowRight } from 'lucide-react'
 import { FotoUploader } from './components/foto-uploader.client'
 import { DokumenUploader } from './components/dokumen-uploader.client'
@@ -12,6 +13,17 @@ export function JurnalSubmitForm() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [availableCategories, setAvailableCategories] = useState<string[]>([
+    'Penanganan Pelanggaran',
+    'Penyelesaian Sengketa',
+    'mou',
+    'koordinasi',
+    'sosialisasi',
+    'pembinaan',
+    'pengawasan',
+    'rapat',
+    'lainnya'
+  ])
 
   const [payload, setPayload] = useState<JurnalSubmissionPayload>({
     judul: '',
@@ -26,6 +38,17 @@ export function JurnalSubmitForm() {
     link_publikasi: '',
     is_published: true
   })
+
+  useEffect(() => {
+    fetch('/api/jurnal/kategori')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data?.data) && data.data.length > 0) {
+          setAvailableCategories(data.data)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,8 +136,11 @@ export function JurnalSubmitForm() {
               onChange={e => setPayload({ ...payload, kategori: e.target.value })}
               className="w-full bg-[var(--color-surface-overlay)] border border-[var(--glass-border-default)] rounded-xl px-4 py-3 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors shadow-sm"
             >
-              <option value="Penanganan Pelanggaran">Penanganan Pelanggaran</option>
-              <option value="Penyelesaian Sengketa">Penyelesaian Sengketa</option>
+              {availableCategories.map(cat => (
+                <option key={cat} value={cat}>
+                  {getCategoryLabel(cat)}
+                </option>
+              ))}
             </select>
           </div>
         </div>

@@ -6,6 +6,7 @@ import KelolaJurnal from './KelolaJurnal'
 import Approval from './Approval'
 import type { LawetUser } from '@/entities/lawet-user/model/lawet-user'
 import { submitJurnalAction } from '@/entities/jurnal/api/submit-jurnal.action'
+import { getCategoryLabel } from '@/shared/ui/colors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const queryClient = new QueryClient()
@@ -30,7 +31,29 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false)
   const [calendarDate, setCalendarDate] = React.useState(new Date())
   const [kategori, setKategori] = React.useState('Penanganan Pelanggaran')
+  const [categoriesList, setCategoriesList] = React.useState<string[]>([
+    'Penanganan Pelanggaran',
+    'Penyelesaian Sengketa',
+    'mou',
+    'koordinasi',
+    'sosialisasi',
+    'pembinaan',
+    'pengawasan',
+    'rapat',
+    'lainnya'
+  ])
   const [isKategoriOpen, setIsKategoriOpen] = React.useState(false)
+
+  React.useEffect(() => {
+    fetch('/api/jurnal/kategori')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data?.data) && data.data.length > 0) {
+          setCategoriesList(data.data)
+        }
+      })
+      .catch(() => {})
+  }, [])
   const [ringkasan, setRingkasan] = React.useState('')
   const [tagsInput, setTagsInput] = React.useState('')
   const [pihakTerkaitInput, setPihakTerkaitInput] = React.useState('')
@@ -656,7 +679,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
 
                     {isKategoriOpen && (
                       <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-white border border-[#E5E7EB] rounded-[11px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] z-50 py-2 overflow-hidden">
-                        {['Penanganan Pelanggaran', 'Penyelesaian Sengketa'].map((opt) => (
+                        {categoriesList.map((opt) => (
                           <div 
                             key={opt}
                             onClick={() => {
@@ -665,7 +688,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
                             }}
                             className={`px-5 py-3 text-[14px] cursor-pointer transition-colors ${kategori === opt ? 'bg-[#4F83F5]/10 text-[#4F83F5] font-bold' : 'text-[#142B42] hover:bg-[#F6F9FC]'}`}
                           >
-                            {opt}
+                            {getCategoryLabel(opt)}
                           </div>
                         ))}
                       </div>
