@@ -138,8 +138,8 @@ export async function getJurnalStatsByYear(year: number): Promise<JurnalStatsAna
 
   // 5. Total Mitra Query
   const partnerQuery = db.execute(sql`
-    SELECT 
-      CASE 
+    SELECT
+      CASE
         WHEN jsonb_typeof(partner) = 'string' THEN partner#>>'{}'
         WHEN jsonb_typeof(partner) = 'object' THEN COALESCE(partner->>'instansi', partner->>'nama')
         ELSE NULL

@@ -41,5 +41,3 @@ export async function tolakJurnalAction(id: string, reason?: string): Promise<{ 
     return { success: false, error: error.message }
   }
 }
-
-

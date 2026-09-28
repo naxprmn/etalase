@@ -39,4 +39,3 @@ export async function deleteJurnalAction(id: string) {
     return { success: false, error: error.message || 'Terjadi kesalahan saat menghapus jurnal.' }
   }
 }
-
