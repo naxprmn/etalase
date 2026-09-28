@@ -13,6 +13,7 @@ export const dokumenSchema = z.object({
 export const jurnalPayloadSchema = z.object({
   source_id: z.string().uuid(),
   judul: z.string().min(1).max(1000),
+  ringkasan: z.string().max(2000).nullable().optional(),
   tanggal_kegiatan: isoDate,
   kategori: z.string().min(1).max(50),
   link_publikasi: z.string().max(2048).nullable().optional(),

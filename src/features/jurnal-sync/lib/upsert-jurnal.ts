@@ -12,6 +12,7 @@ interface IncomingDokumen {
 interface JurnalPayload {
   source_id: string
   judul: string
+  ringkasan?: string | null
   tanggal_kegiatan: string
   kategori: string
   link_publikasi?: string | null
@@ -67,6 +68,7 @@ export async function upsertJurnal(payload: JurnalPayload, database: DatabaseExe
   const valuesToUpsert = {
     source_id: payload.source_id,
     judul: payload.judul,
+    ringkasan: payload.ringkasan || null,
     tanggal_kegiatan: payload.tanggal_kegiatan,
     kategori: payload.kategori,
     link_publikasi: payload.link_publikasi || null,
