@@ -21,19 +21,55 @@ describe('Lawet dashboard security boundary', () => {
   it('authenticates with Lawet Hub without read-only restrictions (ADR-0005)', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       access_token: 'auth-token',
-      user: { id: 'user-1' },
+      user: { id: 'user-1', has_alas_access: true },
     }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     vi.stubGlobal('fetch', fetchMock)
 
     const { loginAction } = await import('@/features/lawet-auth/api/login.action')
-    await loginAction('operator', '1234')
+    const result = await loginAction('operator', '1234')
 
+    expect(result.success).toBe(true)
+    expect(cookieSet).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'lawet_token',
+      value: 'auth-token',
+    }))
     expect(fetchMock).toHaveBeenCalledWith(
       'http://lawet.internal/api/v1/auth/login',
       expect.objectContaining({
         headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
       }),
     )
+  })
+
+  it('rejects login for users without ALAS access', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      access_token: 'auth-token-no-access',
+      user: { id: 'user-no-access', has_alas_access: false },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { loginAction } = await import('@/features/lawet-auth/api/login.action')
+    const result = await loginAction('no_access_staff', '1234')
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('tidak memiliki hak akses ke sistem ALAS')
+    expect(cookieSet).not.toHaveBeenCalled()
+  })
+
+  it('getMeAction returns null for authenticated user without ALAS access', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      id: 'user-no-access',
+      name: 'Staff Lain',
+      username: 'staff_lain',
+      has_alas_access: false,
+      role: { id: 'r1', name: 'staff', level: 1, is_superadmin: false },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { getMeAction } = await import('@/entities/lawet-user/api/get-current-user.action')
+    const user = await getMeAction()
+
+    expect(user).toBeNull()
   })
 
   it('proxies protected media with bearer auth and private no-store caching', async () => {

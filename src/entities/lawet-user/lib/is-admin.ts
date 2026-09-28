@@ -41,3 +41,25 @@ export function canApproveJurnal(user: Pick<LawetUser, 'role'> | null | undefine
     || user.role?.can_approve === true
     || (Number.isSafeInteger(user.role?.level) && user.role.level >= 2)
 }
+
+/**
+ * Memeriksa apakah user memiliki hak akses ke sistem ALAS.
+ * Sesuai kontrak Lawet Hub:
+ * - Superadmin selalu memiliki akses.
+ * - has_alas_access bernilai true.
+ * - feature_access.jurnal_alas bernilai true.
+ */
+export function hasAlasAccess(user: any): boolean {
+  if (!user) return false
+  if (user.is_superadmin === true || user.role?.is_superadmin === true || normalizedRoleName(user.role?.name) === 'superadmin') {
+    return true
+  }
+  if (user.has_alas_access === true) {
+    return true
+  }
+  if (user.feature_access?.jurnal_alas === true) {
+    return true
+  }
+  return false
+}
+

@@ -12,6 +12,7 @@ export async function POST(request: Request) {
       id: 'mock-user-1',
       name: 'Kasubag Humas (Mock)',
       username: username,
+      has_alas_access: username !== 'unauthorized_user',
       division_id: 'div-1',
       division: { id: 'div-1', name: 'Divisi Pengawasan & Humas' },
       role: {

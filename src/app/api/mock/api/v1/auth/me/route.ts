@@ -6,6 +6,7 @@ export async function GET() {
     id: 'test-user-id',
     name: 'Test Staf ALAS',
     username: 'test_staf',
+    has_alas_access: true,
     division_id: 'div-1',
     division: { id: 'div-1', name: 'Divisi Pengawasan' },
     role: {

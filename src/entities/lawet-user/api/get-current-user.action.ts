@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import type { LawetUser } from '../model/lawet-user'
+import { hasAlasAccess } from '../lib/is-admin'
 
 const LAWET_API_URL = process.env.LAWET_API_URL as string
 
@@ -14,34 +15,46 @@ export async function getMeAction(): Promise<LawetUser | null> {
     // Untuk menambahkan user staff/kasubag lain tanpa merusak arsitektur API Lawet Hub asli,
     // cukup tambahkan data user di objek DUMMY_USERS ini dengan format kunci token yang unik.
     if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_MOCK_AUTH === 'true') {
-    const DUMMY_USERS: Record<string, any> = {
-      'dummy-staff-token': {
-        id: 'dummy-staff-1',
-        name: 'Agus',
-        username: 'Agus',
-        division: { id: 'div-1', name: 'Divisi Pengawasan' },
-        role: { id: 'r1', name: 'Staff', level: 1, can_approve: false, is_superadmin: false }
-      },
-      'dummy-staff-2-token': {
-        id: 'dummy-staff-2',
-        name: 'Budi',
-        username: 'staff_budi',
-        division: { id: 'div-1', name: 'Divisi Pengawasan' },
-        role: { id: 'r1', name: 'Staff', level: 1, can_approve: false, is_superadmin: false }
-      },
-      'dummy-kasubag-token': {
-        id: 'dummy-kasubag-1',
-        name: 'Candra',
-        username: 'kasubag',
-        division: { id: 'div-2', name: 'Kasubag PPPS' },
-        role: { id: 'r2', name: 'Kasubag', level: 2, can_approve: true, is_superadmin: false }
-      }
-    };
+      const DUMMY_USERS: Record<string, any> = {
+        'dummy-staff-token': {
+          id: 'dummy-staff-1',
+          name: 'Agus',
+          username: 'Agus',
+          has_alas_access: true,
+          division: { id: 'div-1', name: 'Divisi Pengawasan' },
+          role: { id: 'r1', name: 'Staff', level: 1, can_approve: false, is_superadmin: false }
+        },
+        'dummy-staff-2-token': {
+          id: 'dummy-staff-2',
+          name: 'Budi',
+          username: 'staff_budi',
+          has_alas_access: true,
+          division: { id: 'div-1', name: 'Divisi Pengawasan' },
+          role: { id: 'r1', name: 'Staff', level: 1, can_approve: false, is_superadmin: false }
+        },
+        'dummy-kasubag-token': {
+          id: 'dummy-kasubag-1',
+          name: 'Candra',
+          username: 'kasubag',
+          has_alas_access: true,
+          division: { id: 'div-2', name: 'Kasubag PPPS' },
+          role: { id: 'r2', name: 'Kasubag', level: 2, can_approve: true, is_superadmin: false }
+        },
+        'dummy-no-access-token': {
+          id: 'dummy-no-access-1',
+          name: 'User Tanpa Akses',
+          username: 'no_access_user',
+          has_alas_access: false,
+          division: { id: 'div-3', name: 'Umum' },
+          role: { id: 'r3', name: 'Staff', level: 1, can_approve: false, is_superadmin: false }
+        }
+      };
 
-    if (DUMMY_USERS[token]) {
-      return DUMMY_USERS[token];
+      if (DUMMY_USERS[token]) {
+        const dummy = DUMMY_USERS[token];
+        return hasAlasAccess(dummy) ? dummy : null;
+      }
     }
-  }
     // -------------------------------------
 
     const res = await fetch(`${LAWET_API_URL}/api/v1/auth/me`, {
@@ -67,10 +80,12 @@ export async function getMeAction(): Promise<LawetUser | null> {
       : (data.role || {})
     const roleLevel = Number(rawRole.level ?? data.level ?? 0)
 
-    return {
+    const user: LawetUser = {
       id: data.id,
       name: data.name,
       username: data.username,
+      has_alas_access: data.has_alas_access,
+      feature_access: data.feature_access,
       division_id: data.division_id || data.division?.id || null,
       division: data.division?.name
         ? { id: data.division.id, name: String(data.division.name) }
@@ -83,6 +98,13 @@ export async function getMeAction(): Promise<LawetUser | null> {
         is_superadmin: Boolean(rawRole.is_superadmin ?? data.is_superadmin),
       },
     }
+
+    // Hanya izinkan user yang memiliki akses ke sistem ALAS
+    if (!hasAlasAccess(user)) {
+      return null
+    }
+
+    return user
   } catch (error) {
     console.error('getMeAction error:', error)
     return null
