@@ -42,7 +42,17 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
     const docs = Array.isArray(item.dokumen_pendukung) ? item.dokumen_pendukung : []
 
-    const publicDocs = docs;
+    // ADR-0007: pengunjung anonim tidak menerima dokumen pendukung sama sekali.
+    // Pengguna login hanya melihat dokumen publik, kecuali pemilik/approver.
+    const canSeePrivateDocs = Boolean(user) && (
+      Boolean(user?.name && user.name === item.redaksi)
+      || Boolean(user?.role?.can_approve || user?.role?.is_superadmin)
+    )
+    const publicDocs = !user
+      ? []
+      : canSeePrivateDocs
+        ? docs
+        : docs.filter((d: any) => d && d.is_public !== false)
 
 
 
