@@ -56,8 +56,11 @@ describe('Service Jurnal CRUD Integration', () => {
       tanggal_kegiatan: '2026-06-15',
       kategori: 'mou',
       dokumen_pendukung: [
-        { nama: 'Doc 1', url: 'https://media.com/doc1.pdf', tipe: 'pdf' },
+        // Toggle admin yang sudah ada (false) harus menang atas nilai kiriman.
+        { nama: 'Doc 1', url: 'https://media.com/doc1.pdf', tipe: 'pdf', is_public: true },
         { nama: 'Doc 2', url: 'https://media.com/doc2.pdf', tipe: 'pdf' },
+        // Dokumen baru memakai pilihan pengaju.
+        { nama: 'Doc 3', url: 'https://media.com/doc3.pdf', tipe: 'pdf', is_public: false },
       ],
     }
 
@@ -68,11 +71,13 @@ describe('Service Jurnal CRUD Integration', () => {
     const updatedDocs = dbItemsAfter[0].dokumen_pendukung as any[]
     
     expect(dbItemsAfter[0].judul).toBe('Test Jurnal Kegiatan (Updated Title)')
-    expect(updatedDocs.length).toBe(2)
+    expect(updatedDocs.length).toBe(3)
     const doc1 = updatedDocs.find(d => d.url === 'https://media.com/doc1.pdf')
     expect(doc1.is_public).toBe(false)
     const doc2 = updatedDocs.find(d => d.url === 'https://media.com/doc2.pdf')
     expect(doc2.is_public).toBe(true)
+    const doc3 = updatedDocs.find(d => d.url === 'https://media.com/doc3.pdf')
+    expect(doc3.is_public).toBe(false)
   })
 
   it('should remove missing documents on upsert', async () => {

@@ -7,6 +7,8 @@ interface IncomingDokumen {
   nama: string
   url: string
   tipe: string
+  /** Pilihan visibilitas dari pengaju (Lawet Hub). */
+  is_public?: boolean
 }
 
 interface JurnalPayload {
@@ -53,15 +55,18 @@ export async function upsertJurnal(payload: JurnalPayload, database: DatabaseExe
       nama: doc.nama,
       url: doc.url,
       tipe: doc.tipe,
-      is_public: existingIsPublicMap.has(doc.url) ? existingIsPublicMap.get(doc.url) : true
+      // Toggle admin yang sudah ada menang; dokumen baru memakai pilihan pengaju.
+      is_public: existingIsPublicMap.has(doc.url)
+        ? existingIsPublicMap.get(doc.url)
+        : doc.is_public !== false
     }))
   } else {
-    // Completely new jurnal -> default all dokumen is_public = true
+    // Jurnal baru -> pakai pilihan pengaju (default publik jika tidak dikirim)
     mergedDocs = incomingDocs.map(doc => ({
       nama: doc.nama,
       url: doc.url,
       tipe: doc.tipe,
-      is_public: true
+      is_public: doc.is_public !== false
     }))
   }
 

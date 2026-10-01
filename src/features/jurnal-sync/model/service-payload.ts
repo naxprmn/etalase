@@ -18,7 +18,7 @@ export const jurnalPayloadSchema = z.object({
   kategori: z.string().min(1).max(50),
   link_publikasi: z.string().max(2048).nullable().optional(),
   dokumentasi: z.array(jsonObject).max(200).optional(),
-  dokumen_pendukung: z.array(dokumenSchema.omit({ is_public: true })).max(200).optional(),
+  dokumen_pendukung: z.array(dokumenSchema).max(200).optional(),
   pihak_terkait: z.array(jsonObject).max(200).optional(),
   custom_fields: z.array(jsonObject).max(200).optional(),
   tags: z.array(z.string().max(100)).max(100).nullable().optional(),
