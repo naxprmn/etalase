@@ -20,11 +20,13 @@ ALAS adalah arsip publik kegiatan Bawaslu Kebumen yang menampilkan jurnal kegiat
 | Permukaan | Rute | Akses | Fungsi |
 | --- | --- | --- | --- |
 | Arsip publik | `/` | Publik | Menelusuri jurnal, statistik, kalender, dokumentasi, dan pimpinan. |
-| Login panel | `/login` | Publik | Mengautentikasi akun melalui API Lawet Hub. |
-| Pengajuan | `/pengajuan` | Login | Mengarahkan workflow pembuatan jurnal ke Lawet Hub. |
-| Jurnal saya | `/jurnal-saya` | Login | Melihat draft dan jurnal terbit milik pengguna; menyediakan tautan tambah, edit, kelola/hapus di Lawet Hub dan laporan PDF. |
-| Jurnal bawahan | `/jurnal-saya` | Kasubag/approver | Melihat draft yang menunggu review dan jurnal terbit staf dalam cakupan divisi, termasuk laporan PDF bulanan. |
-| Approval | `/approval` | Capability `can_approve` atau peran level >= 2 | Melihat antrean dan detail; tindakan setuju/tolak dibuka di Lawet Hub dan persetujuan memulai publish ke ALAS. |
+| Login | Pop-up `/#login` (rute `/login` diarahkan ke sini) | Publik | Mengautentikasi akun melalui API Lawet Hub. |
+| Tambah jurnal | `/panel?tab=tambah` | Login | Mengajukan jurnal (foto, dokumen PDF, privat/publik) langsung ke Lawet Hub; approver/superadmin langsung menerbitkan. |
+| Jurnal saya | `/panel?tab=jurnal` | Staf | Melihat status jurnal sendiri (Menunggu Review, Dikembalikan + catatan, Sedang Diterbitkan, Terbit), memperbaiki & mengajukan ulang, serta menghapus. |
+| Kelola jurnal | `/panel?tab=kelola` | Approver/superadmin | Ringkasan dan tabel jurnal dalam cakupan; edit/hapus hanya untuk pemilik atau superadmin. |
+| Approval | `/panel?tab=approval` | `can_approve`, level >= 2, atau superadmin | Meninjau antrean Lawet Hub, menyetujui (memulai publish ke ALAS) atau mengembalikan dengan catatan. |
+
+Rute lama `/jurnal-saya`, `/approval`, `/approval/:id`, `/pengajuan`, `/lawet`, dan `/admin` hanya mengarahkan ke tab panel yang sesuai.
 
 ## Batasan Produk
 

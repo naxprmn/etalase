@@ -9,13 +9,10 @@ const testsDir = join(repoRoot, 'tests')
 
 // Map feature name to test file aliases in tests/ directory
 const FEATURE_TEST_ALIASES = {
-  'admin-auth': ['admin-auth.test.ts'],
-  'jurnal-approval': ['jurnal-progress-tracker.test.tsx', 'centralized_approval_workflow.test.ts'],
-  'jurnal-filter': ['SearchBar.test.tsx'],
-  'jurnal-saya': ['jurnal_workspace.test.ts', 'jurnal_report.test.ts'],
-  'jurnal-submission': ['dokumen-uploader.test.tsx', 'submit_jurnal.test.ts', 'alas_local_workflow.test.ts'],
+  'jurnal-filter': ['jurnal_filter.test.ts'],
+  'jurnal-saya': ['jurnal_workspace.test.ts', 'delete_jurnal.test.ts', 'centralized_approval_workflow.test.ts'],
   'jurnal-sync': ['service_jurnal.test.ts', 'service_delivery.test.ts'],
-  'lawet-auth': ['login_redirect.test.ts'],
+  'lawet-auth': ['lawet_dashboard_boundary.test.ts'],
   'pimpinan-sync': ['service_pimpinan.test.ts'],
   'service-auth': ['service_auth.test.ts'],
   'service-events': ['service_delivery.test.ts'],

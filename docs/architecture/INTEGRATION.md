@@ -219,7 +219,7 @@ Endpoint visibility yang dipakai ALAS:
 
 Proxy media ALAS hanya menerima prefix `jurnal-foto` atau `jurnal-dokumen`, menolak segmen path berbahaya, menerapkan `LAWET_REQUEST_TIMEOUT_MS`, dan selalu mengirim `Cache-Control: private, no-store`.
 
-Submit, edit, delete, upload, approve, dan reject tidak diteruskan oleh ALAS. Action legacy gagal tertutup tanpa network call dan UI mengarahkan pengguna ke layar `LAWET_PUBLIC_URL` yang sesuai untuk menyelesaikan workflow tulis. Halaman `/jurnal-saya` menggabungkan read endpoint di atas untuk memisahkan jurnal milik pengguna dan jurnal bawahan; laporan PDF dibentuk di browser hanya dari record terbit yang sudah lolos cakupan Lawet Hub.
+Sesuai ADR-0005, panel ALAS (`/panel`) memanggil Lawet Hub langsung dengan JWT pengguna untuk submit (`POST /api/v1/jurnal-alas/`), edit/ajukan ulang (`PATCH /{id}`), hapus (`DELETE /{id}`), upload (`/upload/foto`, `/upload/dokumen`), serta approve/reject. Field `url` media dikirim sebagai object_name Lawet Hub. Panel membaca daftar kerja hanya dari Lawet Hub (`/draft`, daftar terbit, `/approval-queue`); DB lokal ALAS murni read model publik yang diisi Lawet Hub lewat Service API setelah persetujuan.
 
 ## Konfigurasi
 

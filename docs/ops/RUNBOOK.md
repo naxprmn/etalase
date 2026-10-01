@@ -29,7 +29,7 @@ Lengkapi minimal nilai berikut di `.env`:
 | `LAWET_API_URL` | URL internal API Lawet Hub untuk login dan pembacaan panel. |
 | `LAWET_PUBLIC_URL` | Origin Lawet Hub yang dapat dibuka browser untuk workflow tulis. |
 | `LAWET_REQUEST_TIMEOUT_MS` | Timeout request proxy media ke Lawet Hub; default deployment `5000`. |
-| `ALAS_ADMIN_ROLE_LEVEL` | Level role minimum untuk dashboard `/admin` (default `3`). |
+| `ALAS_ADMIN_ROLE_LEVEL` | Level role minimum yang dianggap admin dan boleh meninjau approval (default `3`). |
 
 ## Migrasi Database
 
@@ -61,13 +61,9 @@ Jalankan dari root repositori setelah `DATABASE_URL` menunjuk ke database target
 
 Stack produksi terdiri dari `alas-db` (PostgreSQL hanya pada jaringan internal), `alas-app` (Next.js pada port internal 3000/host 3001), dan `alas-nginx` (port host 2006). `ALAS_DB_PASSWORD` wajib diisi; Compose berhenti sebelum start jika nilainya tidak tersedia. Konfigurasi Nginx (`nginx/alas.conf`) secara ketat memblokir rute mock pengujian (`/api/mock/`) dengan HTTP 404 di lingkungan produksi. Workflow GitHub Actions membangun serta mendorong image GHCR ketika ada push ke `main`.
 
-### Mengelola hero beranda
+### Migrasi pembersihan 0010
 
-1. Masuk dengan role yang memenuhi `ALAS_ADMIN_ROLE_LEVEL`, lalu buka `/admin`.
-2. Unggah JPEG, PNG, WebP, atau AVIF dengan ukuran sumber maksimal 8 MB. Rasio 16:9 direkomendasikan.
-3. Aplikasi memvalidasi file asli, menghapus metadata, membatasi output ke maksimum 1920 × 1080, dan menyimpannya sebagai WebP kualitas 82.
-
-Volume `alas_public_uploads` harus tetap dipertahankan saat redeploy. Jangan menghapus volume tersebut kecuali hero hasil unggahan memang ingin dihapus.
+Migrasi `0010_drop_legacy_admin_and_outbox` menghapus tabel `site_settings` (pengaturan hero `/admin` yang tidak lagi dipakai beranda) dan `alas_outbox` (antrean ADR-0004 yang digantikan ADR-0005). Jalankan `npm run db:migrate` saat deploy. Volume `alas_public_uploads` tetap dipakai untuk cache kategori.
 
 ## Pemeriksaan Insiden Singkat
 

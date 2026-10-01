@@ -47,16 +47,6 @@ export const pimpinan = pgTable('pimpinan', {
   updated_at:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
-/** Konfigurasi global yang hanya dapat diubah oleh administrator ALAS. */
-export const siteSettings = pgTable('site_settings', {
-  // Satu record singleton (id = 1), ditegakkan lagi oleh CHECK di migrasi.
-  id:              integer('id').primaryKey().default(1),
-  hero_image_path: text('hero_image_path'),
-  hero_title:      text('hero_title'),
-  hero_subtitle:   text('hero_subtitle'),
-  updated_at:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-})
-
 /** Ledger untuk memastikan satu delivery Direct Service hanya diproses sekali. */
 export const serviceEvents = pgTable('service_events', {
   event_id:        uuid('event_id').primaryKey(),
@@ -66,16 +56,4 @@ export const serviceEvents = pgTable('service_events', {
   processed_at:    timestamp('processed_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   index('service_events_source_idx').on(table.resource_type, table.source_id),
-])
-
-export const alasOutbox = pgTable('alas_outbox', {
-  id:           uuid('id').primaryKey().defaultRandom(),
-  source_id:    uuid('source_id').notNull(),
-  operation:    varchar('operation', { length: 30 }).notNull(),
-  payload:      jsonb('payload').notNull(),
-  status:       varchar('status', { length: 30 }).notNull().default('pending'),
-  created_at:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updated_at:   timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [
-  index('alas_outbox_status_idx').on(table.status),
 ])
