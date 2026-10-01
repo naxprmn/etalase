@@ -22,6 +22,13 @@ import { type LawetUser } from '@/entities/lawet-user'
 
 const queryClient = new QueryClient()
 
+const NAV_ITEMS: { label: string; target: string | null }[] = [
+  { label: 'Beranda', target: null },
+  { label: 'E-kalender', target: 'section-kalender' },
+  { label: 'Jurnal', target: 'section-arsip' },
+  { label: 'Dokumentasi', target: 'section-dokumentasi' },
+]
+
 const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubtitle: string; user: LawetUser | null; recentPhotos?: any[] }> = ({ heroImagePath, heroTitle, heroSubtitle, user, recentPhotos }) => {
   const { q, kategori, tahun, date, setFilter, resetFilter } = useJurnalFilter()
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -109,6 +116,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
   const [scrollY, setScrollY] = useState(0)
   const [vhPx, setVhPx] = useState(800)
 
+  const [hoveredNav, setHoveredNav] = useState<number | null>(null)
   const [hoverLine, setHoverLine] = useState<{ id: string; date: string } | null>(null)
   const listScrollRef = useRef<HTMLDivElement>(null)
   // Flag yang memblokir IntersectionObserver selama scroll programatik dari kalender
@@ -198,14 +206,28 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
             <div className="flex items-center">
               <img src="/assets/hero-logo-etalase.png" alt="ETALASE" className="h-[28px] md:h-[45px] object-contain" />
             </div>
-            <div className="hidden lg:flex items-center gap-[60px]">
-              <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="text-[#142B42] font-semibold text-[15px] relative">
-                Beranda
-                <div className="absolute -bottom-1.5 left-0 w-full h-[2px] bg-[#142B42]"></div>
-              </button>
-              <button onClick={() => document.getElementById('section-kalender')?.scrollIntoView({behavior: 'smooth'})} className="text-[#5D6A77] font-medium text-[15px] hover:text-[#F7921C] transition-colors">E-kalender</button>
-              <button onClick={() => document.getElementById('section-arsip')?.scrollIntoView({behavior: 'smooth'})} className="text-[#5D6A77] font-medium text-[15px] hover:text-[#F7921C] transition-colors">Jurnal</button>
-              <button onClick={() => document.getElementById('section-dokumentasi')?.scrollIntoView({behavior: 'smooth'})} className="text-[#5D6A77] font-medium text-[15px] hover:text-[#F7921C] transition-colors">Dokumentasi</button>
+            <div className="hidden lg:flex items-center gap-[60px]" onMouseLeave={() => setHoveredNav(null)}>
+              {NAV_ITEMS.map((item, i) => {
+                const isActive = i === 0
+                const showIndicator = hoveredNav === null ? isActive : hoveredNav === i
+                return (
+                  <button
+                    key={item.label}
+                    onMouseEnter={() => setHoveredNav(i)}
+                    onFocus={() => setHoveredNav(i)}
+                    onBlur={() => setHoveredNav(null)}
+                    onClick={() => item.target
+                      ? document.getElementById(item.target)?.scrollIntoView({ behavior: 'smooth' })
+                      : window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className={`relative text-[15px] transition-colors ${isActive ? 'text-[#142B42] font-semibold' : 'text-[#5D6A77] font-medium hover:text-[#F7921C]'}`}
+                  >
+                    {item.label}
+                    <span
+                      className={`absolute -bottom-1.5 left-0 w-full h-[2px] origin-center transition-transform duration-300 ${isActive ? 'bg-[#142B42]' : 'bg-[#F7921C]'} ${showIndicator ? 'scale-x-100' : 'scale-x-0'}`}
+                    />
+                  </button>
+                )
+              })}
             </div>
             <button 
               className="bg-[#F7921C] hover:bg-[#e08316] transition-colors text-white font-semibold text-xs md:text-[15px] px-4 md:px-0 w-auto md:w-[154px] h-[36px] md:h-[67px] rounded-full md:rounded-[34px] flex items-center justify-center gap-1.5 md:gap-2 cursor-pointer shadow-sm active:scale-95"
