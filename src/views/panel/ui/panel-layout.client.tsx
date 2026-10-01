@@ -7,6 +7,7 @@ import Approval from './Approval'
 import type { LawetUser } from '@/entities/lawet-user'
 import { submitJurnalAction } from '@/entities/jurnal/api/submit-jurnal.action'
 import { uploadFotoAction, uploadDokumenAction } from '@/entities/jurnal/api/upload-media.action'
+import { toMediaDisplayUrl } from '@/entities/jurnal/lib/media-url'
 import { getCategoryLabel } from '@/shared/ui/colors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -70,6 +71,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
         setTanggalKegiatan(item.tanggal_kegiatan || '');
         setKategori(item.kategori || 'Penanganan Pelanggaran');
         setRingkasan(item.deskripsi || '');
+        setIsPrivat(item.is_published === false);
         
         if (item.pihak_terkait && item.pihak_terkait.length > 0) {
           setPihakTerkaitInput(item.pihak_terkait.map((p: any) => p.nama).join(', '));
@@ -78,13 +80,13 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
         }
 
         if (item.dokumentasi && item.dokumentasi.length > 0) {
-          setFotos(item.dokumentasi.map((d: any) => d.url).filter(Boolean));
+          setFotos(item.dokumentasi.map((d: any) => toMediaDisplayUrl(d.url)).filter(Boolean));
         } else {
           setFotos([]);
         }
 
         if (item.dokumen_pendukung && item.dokumen_pendukung.length > 0) {
-          setDocs(item.dokumen_pendukung.map((d: any) => ({nama: d.nama, url: d.url})).filter((d: any) => d.nama));
+          setDocs(item.dokumen_pendukung.map((d: any) => ({nama: d.nama, url: toMediaDisplayUrl(d.url)})).filter((d: any) => d.nama));
         } else {
           setDocs([]);
         }
@@ -104,6 +106,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
         }
       }
     } else if (activeMenu === 'tambah') {
+      setIsPrivat(true);
       setJudul('');
       setTanggalKegiatan('');
       setKategori('Penanganan Pelanggaran');
@@ -165,7 +168,8 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
 
       const res = await submitJurnalAction(payload);
       if (res.success) {
-        showToast(activeMenu === 'edit' ? "Jurnal berhasil diperbarui!" : "Jurnal berhasil diajukan!", "success");
+        if (res.warning) showToast(res.warning, "error");
+        else showToast(activeMenu === 'edit' ? "Jurnal berhasil diperbarui!" : "Jurnal berhasil diajukan!", "success");
         if (activeMenu === 'edit') {
           router.push('/panel?tab=kelola');
         } else {
@@ -241,6 +245,8 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
     for (const file of validFiles) {
       const formData = new FormData();
       formData.append('file', file);
+      // Lawet Hub mewajibkan field `nama` (Form(...)); tanpa ini respons 422.
+      formData.append('nama', file.name);
       const res = await uploadDokumenAction(formData);
       if (res.success && res.data?.url) {
         newDocs.push({ nama: file.name, url: res.data.url });

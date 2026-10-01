@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { canApproveJurnal, getMeAction } from '@/entities/lawet-user'
+import { toMediaDisplayUrl } from '@/entities/jurnal/lib/media-url'
 
 export type JurnalWorkflowStatus =
   | 'draft'
@@ -90,6 +91,10 @@ function normalizeJurnal(
   if (!id || !judul || !tanggal || !kategori) return null
 
   const submitter = isRecord(item.submitter) ? item.submitter : undefined
+  const records = (value: unknown) => Array.isArray(value) ? value.filter(isRecord) : []
+  const withDisplayUrl = (entry: JsonRecord) =>
+    typeof entry.url === 'string' ? { ...entry, url: toMediaDisplayUrl(entry.url) } : entry
+  const customFields = records(item.custom_fields)
 
   return {
     id,
@@ -105,6 +110,17 @@ function normalizeJurnal(
       || readString(item.redaksi),
     divisi: readString(item.divisi),
     link_publikasi: readString(item.link_publikasi),
+    dokumentasi: records(item.dokumentasi).map(withDisplayUrl),
+    dokumen_pendukung: records(item.dokumen_pendukung).map(withDisplayUrl),
+    // Lawet Hub tidak punya flag visibilitas jurnal; pilihan Privat/Publik di
+    // panel disimpan per dokumen pendukung (`is_public`).
+    is_published: records(item.dokumen_pendukung).length > 0
+      ? records(item.dokumen_pendukung).some((d) => d.is_public !== false)
+      : true,
+    pihak_terkait: records(item.pihak_terkait),
+    tags: Array.isArray(item.tags) ? item.tags.filter((t): t is string => typeof t === 'string') : [],
+    deskripsi: readString(item.ringkasan)
+      || readString(customFields.find((f) => f.label === 'Ringkasan')?.value),
     created_at: readString(item.created_at),
     updated_at: readString(item.updated_at) || readString(item.last_synced_at),
     workflow_notes: readString(item.workflow_notes),

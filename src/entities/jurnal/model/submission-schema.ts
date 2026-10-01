@@ -1,7 +1,8 @@
 import { z } from 'zod'
 
+// `url` boleh berupa URL absolut, path proxy media, atau object_name Lawet Hub.
 export const dokumentasiItemSchema = z.object({
-  url: z.string().url('URL tidak valid'),
+  url: z.string().min(1, 'URL dokumentasi wajib diisi'),
   caption: z.string().optional(),
   type: z.enum(['image', 'video'])
 })
@@ -9,7 +10,7 @@ export type DokumentasiItem = z.infer<typeof dokumentasiItemSchema>
 
 export const dokumenPendukungItemSchema = z.object({
   nama: z.string().min(1, 'Nama dokumen wajib diisi'),
-  url: z.string().url('URL dokumen tidak valid'),
+  url: z.string().min(1, 'URL dokumen wajib diisi'),
   tipe: z.enum(['pdf']),
   is_public: z.boolean().default(false)
 })

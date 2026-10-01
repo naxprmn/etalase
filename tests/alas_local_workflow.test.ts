@@ -61,7 +61,13 @@ describe('ALAS Local Write Workflow', () => {
     cookieGet.mockReturnValue({ value: 'test-token' } as any)
   })
 
-  it('Skenario 1: Submit Jurnal validates input and writes to ALAS DB (Outbox)', async () => {
+  it('Skenario 1: Submit Jurnal validates input and posts directly to Lawet Hub (ADR-0005)', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'lawet-jurnal-1', status: 'draft' }),
+    })
+    vi.stubGlobal('fetch', fetchSpy)
+    vi.stubEnv('LAWET_API_URL', 'http://127.0.0.1:2002')
     const { submitJurnalAction } = await import('@/entities/jurnal/api/submit-jurnal.action')
     
     // Invalid Payload (Judul too short)
@@ -83,14 +89,26 @@ describe('ALAS Local Write Workflow', () => {
     // Valid Payload
     const validPayload: JurnalSubmissionPayload = {
       ...invalidPayload,
-      judul: 'Rapat Bawaslu Valid'
+      judul: 'Rapat Bawaslu Valid',
+      dokumentasi: [{ url: '/api/v1/jurnal-alas/media/jurnal-foto/a.png', type: 'image' }],
+      dokumen_pendukung: [{ nama: 'Notulen', url: '/api/v1/jurnal-alas/media/jurnal-dokumen/b.pdf', tipe: 'pdf', is_public: false }],
     }
-    
+    expect(fetchSpy).not.toHaveBeenCalled()
+
     const result = await submitJurnalAction(validPayload)
     expect(result.success).toBe(true)
-    
-    // Ensures DB insert is called twice (jurnal & outbox)
-    expect(db.insert).toHaveBeenCalledTimes(2)
+    expect(result.data).toEqual({ source_id: 'lawet-jurnal-1', status: 'draft' })
+
+    // Staf: hanya create (tanpa auto-approve), tidak menulis ke DB lokal
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchSpy.mock.calls[0]
+    expect(url).toBe('http://127.0.0.1:2002/api/v1/jurnal-alas/')
+    expect(init.method).toBe('POST')
+    const body = JSON.parse(init.body)
+    // URL proxy media dikirim sebagai object_name sesuai kontrak Lawet Hub
+    expect(body.dokumentasi[0].url).toBe('jurnal-foto/a.png')
+    expect(body.dokumen_pendukung[0].url).toBe('jurnal-dokumen/b.pdf')
+    expect(db.insert).not.toHaveBeenCalled()
   })
 
   it('Skenario 2 & 5: Approval Queue and Approve Action (Lawet Hub Centralized)', async () => {

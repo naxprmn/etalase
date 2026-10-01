@@ -63,6 +63,12 @@ describe('ALAS Workflow Jurnal Lifecycle (E2E Integration)', () => {
       is_published: false,
     }
     
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'lawet-jurnal-1', status: 'draft' }),
+    }))
+    vi.stubEnv('LAWET_API_URL', 'http://127.0.0.1:2002')
+
     const submitRes = await submitJurnalAction(validPayload)
     expect(submitRes.success).toBe(true)
     

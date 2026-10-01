@@ -12,10 +12,9 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
   const router = useRouter();
 
-  const subordinates = [
-    ...(workspace?.mine || []).filter(s => s.status === 'publish_pending'),
-    ...(workspace?.subordinates || []).filter(s => s.status === 'publish_pending')
-  ];
+  // Antrean review Lawet Hub (ADR-0005): jurnal berstatus `draft` dari
+  // /approval-queue. `publish_pending` berarti sudah disetujui & sedang disinkron.
+  const subordinates = (workspace?.subordinates || []).filter(s => s.status === 'draft');
 
   
 
@@ -436,11 +435,11 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
                   </button>
 
-                  {subordinates.find(i => i.id !== selectedItem.id && i.status === 'publish_pending') && (
+                  {subordinates.find(i => i.id !== selectedItem.id && i.status === 'draft') && (
 
                     <button onClick={() => {
 
-                      const nextItem = subordinates.find(i => i.id !== selectedItem.id && i.status === 'publish_pending');
+                      const nextItem = subordinates.find(i => i.id !== selectedItem.id && i.status === 'draft');
 
                       if (nextItem) setSelectedQueue(nextItem.id);
 
