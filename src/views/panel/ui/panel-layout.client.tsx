@@ -10,6 +10,7 @@ import { uploadFotoAction, uploadDokumenAction } from '@/entities/jurnal/api/upl
 import { toMediaDisplayUrl } from '@/entities/jurnal/lib/media-url'
 import { getCategoryLabel } from '@/shared/ui/colors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useDeletedJurnalIds, withoutDeletedJurnals } from '@/features/jurnal-saya/model/deleted-jurnals'
 
 
 const queryClient = new QueryClient()
@@ -18,8 +19,10 @@ const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Ju
 const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
-export default function PanelLayoutClient({ activeMenu, workspace, error, user, editId }: { activeMenu: string, workspace: any, error: string | null, user: LawetUser | null, editId?: string | null }) {
+export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspace, error, user, editId }: { activeMenu: string, workspace: any, error: string | null, user: LawetUser | null, editId?: string | null }) {
   const router = useRouter()
+  const deletedJurnalIds = useDeletedJurnalIds()
+  const workspace = React.useMemo(() => withoutDeletedJurnals(serverWorkspace, deletedJurnalIds), [serverWorkspace, deletedJurnalIds])
   
   // Toast Notification State
   const [toast, setToast] = React.useState<{message: string, type: 'error' | 'success'} | null>(null);

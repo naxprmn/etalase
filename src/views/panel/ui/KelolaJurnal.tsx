@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { Search, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { deleteJurnalAction } from '@/features/jurnal-saya/api/delete.action';
+import { markJurnalDeleted } from '@/features/jurnal-saya/model/deleted-jurnals';
 import { JurnalDetailModal } from '@/entities/jurnal/ui/jurnal-detail-modal.client';
 import { canDeleteJurnal, canEditJurnal, isInProcess, workflowStatusLabel } from '@/entities/jurnal/lib/workflow-status';
 import { getCategoryLabel } from '@/shared/ui/colors';
@@ -447,7 +448,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
               {currentItems.length > 0 ? currentItems.map((item, idx) => {
                 const isPub = item.status === 'published';
                 return (
-                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50 divide-x divide-gray-100">
+                <tr key={item.id}className="border-b border-gray-100 hover:bg-gray-50/50 divide-x divide-gray-100">
                   <td className="py-3 px-4">{(validCurrentPage - 1) * itemsPerPage + idx + 1}</td>
                   <td className="py-3 px-4 font-medium text-blue-900">{item.judul || 'Untitled'}</td>
                   <td className="py-3 px-4 whitespace-nowrap">{item.owner_name || '-'}</td>
@@ -578,12 +579,13 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                     setIsDeleting(true);
                     const res = await deleteJurnalAction(deletePopup);
                     setIsDeleting(false);
-                    if (!res.success) {
+                    if (!res.success && !res.notFound) {
                       showToast('Gagal menghapus jurnal: ' + res.error, 'error');
                       return;
                     }
+                    markJurnalDeleted(deletePopup);
                     setDeletePopup(null);
-                    showToast('Jurnal berhasil dihapus', 'success');
+                    showToast(res.success ? 'Jurnal berhasil dihapus' : 'Jurnal sudah terhapus', 'success');
                     router.refresh();
                   }}
                   disabled={isDeleting}

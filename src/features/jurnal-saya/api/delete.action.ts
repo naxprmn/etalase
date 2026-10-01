@@ -35,7 +35,8 @@ export async function deleteJurnalAction(id: string) {
         return { success: false, error: detail || 'Akses ditolak: hanya pemilik atau superadmin yang dapat menghapus jurnal ini.' }
       }
       if (res.status === 404) {
-        return { success: false, error: 'Jurnal tidak ditemukan.' }
+        // Sudah terhapus (mis. klik ganda atau daftar belum menyusul).
+        return { success: false, notFound: true, error: 'Jurnal tidak ditemukan.' }
       }
       return { success: false, error: detail || `Lawet Hub merespons HTTP ${res.status}` }
     }

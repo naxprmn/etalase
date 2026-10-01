@@ -9,6 +9,7 @@ const CAT_COLORS = ['#60A5FA', '#F87171', '#FBBF24', '#818CF8']; // Sosialisasi 
 
 import { useRouter } from 'next/navigation';
 import { deleteJurnalAction } from '@/features/jurnal-saya/api/delete.action';
+import { markJurnalDeleted } from '@/features/jurnal-saya/model/deleted-jurnals';
 import { JurnalDetailModal } from '@/entities/jurnal/ui/jurnal-detail-modal.client';
 import { canDeleteJurnal, canEditJurnal, isInProcess, workflowStatusLabel } from '@/entities/jurnal/lib/workflow-status';
 import { getCategoryLabel } from '@/shared/ui/colors';
@@ -304,7 +305,7 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
           {currentItems.map((item, idx) => {
             const isPub = item.status === 'published';
             return (
-              <div key={idx} className="bg-[#FFFEFE] border border-[#142B42] rounded-[12px] p-4 flex flex-col transition-all hover:shadow-md w-full min-h-[185px]">
+              <div key={item.id} className="bg-[#FFFEFE] border border-[#142B42] rounded-[12px] p-4 flex flex-col transition-all hover:shadow-md w-full min-h-[185px]">
                 <div className="flex justify-between items-start gap-1 mb-3">
                   <span className="bg-[#E7F2FE] text-[#3B82F6] px-2 h-[20px] rounded-[10px] text-[9px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 overflow-hidden">
                     <FileText size={10} strokeWidth={2.5} className="shrink-0" /> 
@@ -425,9 +426,10 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
                     setIsDeleting(true);
                     const res = await deleteJurnalAction(deletePopup);
                     setIsDeleting(false);
-                    if(res.success) {
+                    if(res.success || res.notFound) {
+                      markJurnalDeleted(deletePopup);
                       setDeletePopup(null);
-                      showToast('Jurnal berhasil dihapus', 'success');
+                      showToast(res.success ? 'Jurnal berhasil dihapus' : 'Jurnal sudah terhapus', 'success');
                       router.refresh();
                     } else {
                       showToast('Gagal menghapus jurnal: ' + res.error, 'error');
