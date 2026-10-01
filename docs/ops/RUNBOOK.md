@@ -41,6 +41,20 @@ npx drizzle-kit migrate
 
 Jalankan dari root repositori setelah `DATABASE_URL` menunjuk ke database target. Backup database terlebih dahulu untuk lingkungan produksi. Jangan mengedit migrasi yang sudah diterapkan.
 
+### Produksi: `scripts/migrate-prod.sh`
+
+Image produksi (Next.js standalone) tidak membawa `drizzle-kit` dan **tidak** menjalankan migrasi saat start; deploy image saja tidak mengubah skema. Di server, dari root repo produksi (`/opt/docker-compose/etalase`):
+
+```bash
+bash scripts/migrate-prod.sh --dry-run            # tampilkan migrasi tertunda + SQL destruktif
+bash scripts/migrate-prod.sh                      # backup lalu migrate (konfirmasi "YA")
+bash scripts/migrate-prod.sh --allow-destructive  # wajib bila ada DROP/TRUNCATE/DELETE
+```
+
+Skrip menentukan migrasi tertunda dengan aturan yang sama seperti `drizzle-kit` (entri journal dengan `when` lebih baru dari migrasi terakhir di `drizzle.__drizzle_migrations`), menolak SQL destruktif tanpa `--allow-destructive`, membuat backup `pg_dump` ke `/root/pre-deploy/alas-<waktu>-pre-migrate.sql.gz`, lalu menjalankan `drizzle-kit migrate` di container `node` sementara dari **salinan** repo pada network `alas-db` (folder produksi tidak terisi `node_modules`), dan memverifikasi jumlah migrasi tercatat. Opsi lingkungan: `DB_CONTAINER`, `BACKUP_DIR`, `NODE_IMAGE`.
+
+Catatan: `when` migrasi `0002` di journal berbeda dari yang tercatat di database produksi; karena itu jangan mencocokkan migrasi per entri.
+
 ## Deployment Docker
 
 1. Buat `.env` produksi dari `.env.example` dan isi semua rahasia.
@@ -51,7 +65,7 @@ Jalankan dari root repositori setelah `DATABASE_URL` menunjuk ke database target
    docker compose -f docker-compose.prod.yml up -d
    ```
 
-3. Jalankan migrasi dengan akses jaringan ke `alas-db`.
+3. Jalankan migrasi dengan akses jaringan ke `alas-db`: `bash scripts/migrate-prod.sh` (lihat [Migrasi Database](#produksi-scriptsmigrate-prodsh)).
 4. Arahkan reverse proxy/tunnel HTTPS ke Nginx pada port host `2006`. Terminasi TLS harus berada di proxy publik; koneksi HTTP pada compose hanya untuk jaringan internal.
 5. Verifikasi health check:
 
@@ -63,7 +77,7 @@ Stack produksi terdiri dari `alas-db` (PostgreSQL hanya pada jaringan internal),
 
 ### Migrasi pembersihan 0010
 
-Migrasi `0010_drop_legacy_admin_and_outbox` menghapus tabel `site_settings` (pengaturan hero `/admin` yang tidak lagi dipakai beranda) dan `alas_outbox` (antrean ADR-0004 yang digantikan ADR-0005). Jalankan `npm run db:migrate` saat deploy. Volume `alas_public_uploads` tetap dipakai untuk cache kategori.
+Migrasi `0010_drop_legacy_admin_and_outbox` menghapus tabel `site_settings` (pengaturan hero `/admin` yang tidak lagi dipakai beranda) dan `alas_outbox` (antrean ADR-0004 yang digantikan ADR-0005). Di produksi sudah diterapkan 1 Okt 2026 (`alas_outbox` hanya berisi 1 baris uji; backup `/root/pre-deploy/alas-20261001-1812.sql.gz`). Untuk lingkungan lain jalankan `bash scripts/migrate-prod.sh --allow-destructive`. Volume `alas_public_uploads` tetap dipakai untuk cache kategori.
 
 ## Pemeriksaan Insiden Singkat
 
