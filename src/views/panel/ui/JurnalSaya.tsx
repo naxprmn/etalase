@@ -5,15 +5,16 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { FileText, Grid, UserCheck, ChevronDown, User, Calendar, Clock, CheckCircle2, Edit2, Trash2, Eye, AlertTriangle } from 'lucide-react';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-const STATUS_COLORS = ['#4ADE80', '#FB923C', '#F87171']; // Di Terima (Green), Menunggu (Orange), Di Tolak (Red)
 const CAT_COLORS = ['#60A5FA', '#F87171', '#FBBF24', '#818CF8']; // Sosialisasi (Blue), Rapat (Red), MoU (Yellow), Lainnya (Indigo)
 
 import { useRouter } from 'next/navigation';
 import { deleteJurnalAction } from '@/features/jurnal-saya/api/delete.action';
 import { JurnalDetailModal } from '@/entities/jurnal/ui/jurnal-detail-modal.client';
+import { canDeleteJurnal, canEditJurnal, isInProcess, workflowStatusLabel } from '@/entities/jurnal/lib/workflow-status';
+import { getCategoryLabel } from '@/shared/ui/colors';
 export default function JurnalSaya({ workspace, error }: { workspace: JurnalWorkspace | null, error: string | null }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Semua'|'Draft'|'Terbit'>('Semua');
+  const [activeTab, setActiveTab] = useState<'Semua'|'Proses'|'Terbit'>('Semua');
   const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
   const [deletePopup, setDeletePopup] = useState<string | null>(null);
   const [detailPopup, setDetailPopup] = useState<string | null>(null);
@@ -34,8 +35,8 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
 
   const filteredList = useMemo(() => {
     let items = listToRender;
-    if (activeTab === 'Draft') {
-       items = items.filter(i => i.status === 'draft' || i.status === 'publish_pending' || i.status === 'rejected');
+    if (activeTab === 'Proses') {
+       items = items.filter(i => isInProcess(i.status));
     } else if (activeTab === 'Terbit') {
        items = items.filter(i => i.status === 'published');
     }
@@ -53,7 +54,11 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
   
   const total = allItems.length;
   const published = allItems.filter(i => i.status === 'published').length;
-  const pending = allItems.filter(i => i.status === 'publish_pending').length;
+  // Belum terbit: menunggu review, dikembalikan, atau sedang diterbitkan.
+  const pending = allItems.filter(i => isInProcess(i.status)).length;
+  const viewer = workspace
+    ? { name: workspace.viewerName, role: { is_superadmin: workspace.viewerIsSuperadmin } }
+    : null;
   const rejectedCount = allItems.filter(i => i.status === 'rejected').length;
 
   const barData = MONTHS.map((m, idx) => {
@@ -66,16 +71,16 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
   });
   
   const pieStatusData = [
-    { name: 'Di Terima', value: published, color: '#4ADE80' },
-    { name: 'Menunggu', value: pending, color: '#FB923C' },
-    { name: 'Di Tolak', value: rejectedCount, color: '#F87171' },
-    { name: 'Draft', value: allItems.filter(i => i.status === 'draft').length, color: '#9CA3AF' }
+    { name: workflowStatusLabel('published'), value: published, color: '#4ADE80' },
+    { name: workflowStatusLabel('draft'), value: allItems.filter(i => i.status === 'draft').length, color: '#FB923C' },
+    { name: workflowStatusLabel('publish_pending'), value: allItems.filter(i => i.status === 'publish_pending').length, color: '#60A5FA' },
+    { name: workflowStatusLabel('rejected'), value: rejectedCount, color: '#F87171' },
   ].filter(d => d.value > 0);
   
   const pieCatData = useMemo(() => {
     const counts: Record<string, number> = {};
     allItems.forEach(item => {
-      const cat = item.kategori || 'Lainnya';
+      const cat = item.kategori ? getCategoryLabel(item.kategori) : 'Lainnya';
       counts[cat] = (counts[cat] || 0) + 1;
     });
     return Object.entries(counts).map(([name, value], index) => ({
@@ -137,7 +142,7 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
             <h4 className="text-[#142B42] font-bold text-[18px]">Menunggu Proses</h4>
           </div>
           <h2 className="text-[40px] font-bold text-[#142B42] mb-1">{pending}</h2>
-          <p className="text-[#A0AAB5] text-sm">Dalam Tahap Verifikasi</p>
+          <p className="text-[#A0AAB5] text-sm">Menunggu review, dikembalikan, atau sedang diterbitkan</p>
         </div>
         
         <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm flex flex-col justify-center">
@@ -164,7 +169,7 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
               className="text-xs bg-[#F6F9FC] text-[#7B8EA0] px-3 py-1.5 rounded-full outline-none font-semibold cursor-pointer appearance-none text-center"
               style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg fill="%237B8EA0" height="14" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', paddingRight: '24px' }}
             >
-              {[2024, 2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}</option>)}
+              {Array.from({ length: Math.max(new Date().getFullYear() - 2024 + 1, 1) }, (_, i) => new Date().getFullYear() - i).map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <div className="flex-1 -ml-4">
@@ -187,18 +192,18 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
               <PieChart>
                 <Pie data={pieStatusData} cx="50%" cy="50%" innerRadius={0} outerRadius={80} dataKey="value" stroke="none">
                   {pieStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-center gap-4 mt-2 w-full text-[10px] text-[#7B8EA0] font-medium">
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#4ADE80]"></div>Di Terima</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#FB923C]"></div>Menunggu</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#F87171]"></div>Di Tolak</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#9CA3AF]"></div>Draft</div>
+          <div className="flex justify-center flex-wrap gap-3 mt-2 w-full text-[10px] text-[#7B8EA0] font-medium">
+            {pieStatusData.length === 0 && <span>Belum ada jurnal</span>}
+            {pieStatusData.map((entry) => (
+              <div key={entry.name} className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>{entry.name}</div>
+            ))}
           </div>
         </div>
 
@@ -230,7 +235,7 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
         {/* Staff Pie Chart (Kasubag Only) */}
         {hasSubordinates && (
           <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm h-[320px] flex flex-col items-center">
-            <h4 className="text-sm font-bold text-[#142B42] w-full text-left mb-2">Staff Uploud Jurnal</h4>
+            <h4 className="text-sm font-bold text-[#142B42] w-full text-left mb-2">Staff Upload Jurnal</h4>
             <div className="flex-1 w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="80%">
                 <PieChart>
@@ -268,7 +273,7 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
                 {hasSubordinates ? 'Jurnal Bawahan' : 'Daftar Jurnal'}
               </h3>
               <p className="text-[#7B8EA0] text-[14px]">
-                {hasSubordinates ? 'Draft yang menunggu review dan jurnal terbit staf' : 'Daftar jurnal yang telah Anda ajukan'}
+                {hasSubordinates ? 'Jurnal staf yang menunggu review dan yang sudah terbit' : 'Daftar jurnal yang telah Anda ajukan'}
               </p>
             </div>
           </div>
@@ -281,10 +286,10 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
               Semua
             </button>
             <button 
-              onClick={() => { setActiveTab('Draft'); setCurrentPage(1); }}
-              className={`flex-1 md:flex-none px-6 py-2 rounded-full text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'Draft' ? 'bg-[#142B42] text-white' : 'text-[#7B8EA0] hover:bg-gray-100'}`}
+              onClick={() => { setActiveTab('Proses'); setCurrentPage(1); }}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-full text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'Proses' ? 'bg-[#142B42] text-white' : 'text-[#7B8EA0] hover:bg-gray-100'}`}
             >
-              Draft
+              Dalam Proses
             </button>
             <button 
               onClick={() => { setActiveTab('Terbit'); setCurrentPage(1); }}
@@ -303,29 +308,17 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
                 <div className="flex justify-between items-start gap-1 mb-3">
                   <span className="bg-[#E7F2FE] text-[#3B82F6] px-2 h-[20px] rounded-[10px] text-[9px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 overflow-hidden">
                     <FileText size={10} strokeWidth={2.5} className="shrink-0" /> 
-                    <span className="truncate">{item.kategori || 'Sosialisasi'}</span>
+                    <span className="truncate">{item.kategori ? getCategoryLabel(item.kategori) : '-'}</span>
                   </span>
-                                    {isPub ? (
-                    <span className="bg-[#C0FFDF] text-[#22C55E] px-2 h-[20px] rounded-[10px] text-[9px] font-bold flex items-center justify-center gap-1 whitespace-nowrap shrink-0">
-                      <CheckCircle2 size={10} strokeWidth={2.5} className="shrink-0" /> 
-                      Terbit Publik
-                    </span>
-                  ) : item.status === 'rejected' ? (
-                    <span className="bg-[#FF3333] text-white px-3 h-[24px] rounded-[12px] text-[10px] font-bold flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0">
-                      <Clock size={12} strokeWidth={2.5} className="shrink-0" /> 
-                      Di Tolak
-                    </span>
-                  ) : item.status === 'draft' ? (
-                    <span className="bg-[#F3F4F6] text-[#6B7280] px-2 h-[20px] rounded-[10px] text-[9px] font-bold flex items-center justify-center gap-1 whitespace-nowrap shrink-0">
-                      <Edit2 size={10} strokeWidth={2.5} className="shrink-0" /> 
-                      Draft
-                    </span>
-                  ) : (
-                    <span className="bg-[#FFE5C8] text-[#F97316] px-2 h-[20px] rounded-[10px] text-[9px] font-bold flex items-center justify-center gap-1 whitespace-nowrap shrink-0">
-                      <Clock size={10} strokeWidth={2.5} className="shrink-0" /> 
-                      Menunggu Approval
-                    </span>
-                  )}
+                  <span className={`px-2 h-[20px] rounded-[10px] text-[9px] font-bold flex items-center justify-center gap-1 whitespace-nowrap shrink-0 ${
+                    isPub ? 'bg-[#C0FFDF] text-[#16A34A]'
+                    : item.status === 'rejected' ? 'bg-[#FF3333] text-white'
+                    : item.status === 'publish_pending' ? 'bg-[#DBEAFE] text-[#2563EB]'
+                    : 'bg-[#FFE5C8] text-[#F97316]'
+                  }`}>
+                    {isPub ? <CheckCircle2 size={10} strokeWidth={2.5} className="shrink-0" /> : <Clock size={10} strokeWidth={2.5} className="shrink-0" />}
+                    {workflowStatusLabel(item.status)}
+                  </span>
                 </div>
 
                 <h4 className="font-medium text-[#283D52] text-[12px] line-clamp-2 min-h-[18px]">{item.judul || 'Tanpa Judul'}</h4>
@@ -335,11 +328,11 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
                 <div className="flex flex-col gap-1 text-[#475569] text-[10px] font-medium mb-3 mt-3">
                   <div className="flex items-center gap-1.5">
                     <Calendar size={12} strokeWidth={2.5} /> 
-                    {item.tanggal_kegiatan ? new Date(item.tanggal_kegiatan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '18 September 2026'}
+                    {item.tanggal_kegiatan ? new Date(item.tanggal_kegiatan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <User size={12} strokeWidth={2.5} />
-                    {item.divisi ? `Staf ${item.divisi}` : 'Staf Divisi Pengawasan'}
+                    {[item.owner_name, item.divisi].filter(Boolean).join(' · ') || '-'}
                   </div>
                 </div>
 
@@ -352,25 +345,34 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
                 <div className="w-full">
                   {isPub ? (
                     <button 
-                      onClick={() => window.open('/?jurnalId=' + item.id, '_blank')}
+                      onClick={() => window.open('/?jurnalId=' + (item.source_id || item.id), '_blank')}
                       className="w-full h-[26px] bg-[#142B42] hover:bg-[#1f3f61] text-white rounded-[8px] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
                     >
                       <Eye size={12} strokeWidth={2.5} /> Lihat
                     </button>
                   ) : (
                     <div className="flex gap-2 w-full">
-                      <button 
+                      {canEditJurnal(viewer, item, workspace?.viewerId) ? (
+                      <button
                         onClick={() => router.push(`/panel?tab=edit&editId=${item.id}`)}
                         className="flex-1 shrink-0 h-[26px] bg-[#1F365C] hover:bg-[#142642] text-white rounded-[8px] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
                       >
-                        <Edit2 size={12} strokeWidth={2.5} /> Edit
+                        <Edit2 size={12} strokeWidth={2.5} /> {item.status === 'rejected' ? 'Perbaiki & Ajukan Ulang' : 'Edit'}
                       </button>
-                      <button 
+                      ) : (
+                        <span className="flex-1 h-[26px] rounded-[8px] bg-[#F1F5F9] text-[#64748B] text-[10px] font-semibold flex items-center justify-center">
+                          {workflowStatusLabel(item.status)}
+                        </span>
+                      )}
+                      {canDeleteJurnal(viewer, item, workspace?.viewerId) && (
+                      <button
                         onClick={() => setDeletePopup(item.id)}
+                        aria-label="Hapus jurnal"
                         className="w-[51px] h-[26px] shrink-0 bg-[#FF3030] hover:bg-[#DC2626] text-white rounded-[8px] flex items-center justify-center transition-colors"
                       >
                         <Trash2 size={12} strokeWidth={2.5} />
                       </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -426,6 +428,7 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
                     if(res.success) {
                       setDeletePopup(null);
                       showToast('Jurnal berhasil dihapus', 'success');
+                      router.refresh();
                     } else {
                       showToast('Gagal menghapus jurnal: ' + res.error, 'error');
                     }

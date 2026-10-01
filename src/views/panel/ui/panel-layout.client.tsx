@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import JurnalSaya from './JurnalSaya'
 import KelolaJurnal from './KelolaJurnal'
 import Approval from './Approval'
-import type { LawetUser } from '@/entities/lawet-user'
+import { canApproveJurnal, type LawetUser } from '@/entities/lawet-user'
 import { submitJurnalAction } from '@/entities/jurnal/api/submit-jurnal.action'
 import { uploadFotoAction, uploadDokumenAction } from '@/entities/jurnal/api/upload-media.action'
 import { toMediaDisplayUrl } from '@/entities/jurnal/lib/media-url'
@@ -161,9 +161,14 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
         dokumentasi: fotos.map(f => ({ url: f, type: 'image' as const })),
         dokumen_pendukung: docs.map(d => ({ nama: d.nama, url: d.url, tipe: 'pdf' as const, is_public: !isPrivat })),
         pihak_terkait: pihakTerkaitInput ? pihakTerkaitInput.split(',').map(p => p.trim()).filter(Boolean).slice(0, 2).map(nama => ({ nama })) : [],
-        custom_fields: ringkasan ? [{ label: 'Ringkasan', value: ringkasan }] : [],
+        custom_fields: [],
         tags: tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : [],
-        link_publikasi: links.length > 0 ? links[0] : currentLink.trim()
+        // Link yang diketik tanpa menekan Enter tetap disimpan (dengan skema https).
+        link_publikasi: links.length > 0
+          ? links[0]
+          : currentLink.trim() && !/^https?:\/\//i.test(currentLink.trim())
+            ? `https://${currentLink.trim()}`
+            : currentLink.trim()
       };
 
       const res = await submitJurnalAction(payload);
@@ -285,10 +290,8 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
 
       try {
         new URL(val);
-        if (!links.includes(val)) {
-          setLinks([...links, val]);
-          setCurrentLink('');
-        }
+        setLinks([val]);
+        setCurrentLink('');
       } catch (err) {
         showToast("Link tidak valid. Gunakan format URL yang benar.", "error");
       }
@@ -304,8 +307,10 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
   }
 
   // Role checks
-  const isKasubag = user?.role?.name?.toLowerCase().includes('kasubag') || user?.role?.can_approve;
+  // Sama dengan aturan akses approval di seluruh aplikasi (termasuk superadmin).
+  const isKasubag = canApproveJurnal(user);
   const isStaff = !isKasubag;
+  const reviewQueueCount = (workspace?.subordinates || []).filter((i: any) => i.status === 'draft').length;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -379,9 +384,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
           {/* Menus */}
           <div className="p-6 px-10 flex flex-col gap-4 items-start mt-2">
             
-            {/* Staff Menus */}
-            {isStaff && (
-              <>
+            {/* Semua peran dapat mengajukan jurnal */}
                 <button 
                   onClick={() => handleMenuClick('tambah')}
                   className={`w-full xl:w-[289px] h-[75px] flex items-center gap-4 px-5 rounded-[11px] transition-all text-left ${activeMenu === 'tambah' ? 'bg-[#FEB143]/25' : 'hover:bg-white'}`}
@@ -395,6 +398,9 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
                   </div>
                 </button>
 
+            {/* Staff Menus */}
+            {isStaff && (
+              <>
                 <button 
                   onClick={() => handleMenuClick('jurnal')}
                   className={`w-full xl:w-[289px] h-[75px] flex items-center gap-4 px-5 rounded-[11px] transition-all text-left ${activeMenu === 'jurnal' ? 'bg-[#FEB143]/25' : 'hover:bg-white'}`}
@@ -434,7 +440,12 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M16 13H8"></path><path d="M16 17H8"></path><polyline points="10 9 9 9 8 9"></polyline></svg>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[14px] font-bold text-[#142B42]">Approval</span>
+                    <span className="text-[14px] font-bold text-[#142B42] flex items-center gap-2">
+                      Approval
+                      {reviewQueueCount > 0 && (
+                        <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#D92D20] text-white text-[11px] font-bold flex items-center justify-center" aria-label={`${reviewQueueCount} jurnal menunggu review`}>{reviewQueueCount}</span>
+                      )}
+                    </span>
                     <span className="text-[11px] text-[#7B8EA0]">Tinjau Pengajuan</span>
                   </div>
                 </button>
@@ -711,7 +722,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 relative">
                 <div>
                   <label className="block text-[#142B42] text-[13px] font-bold mb-3 uppercase tracking-wide">
-                    Tags (Pisah dengan koma) <span className="text-red-500">*</span>
+                    Tags (Pisah dengan koma)
                   </label>
                   <input 
                       type="text" 
@@ -728,7 +739,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
                   <div className="flex flex-col gap-3">
                     <input 
                       type="text" 
-                      placeholder="https://kebumen.Bawaslu (Tekan Enter untuk menambah)" 
+                      placeholder="https://kebumen.bawaslu.go.id/... (Tekan Enter untuk menyimpan)" 
                       value={currentLink}
                       onChange={(e) => setCurrentLink(e.target.value)}
                       onKeyDown={handleAddLink}
@@ -914,6 +925,14 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
         ) : (
           <>
             <button 
+              onClick={() => handleMenuClick('tambah')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full shadow-md transition-transform active:scale-95 ${activeMenu === 'tambah' ? 'bg-[#142B42] text-white' : 'bg-[#F7921C] text-white'}`}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span className="text-[12px] font-bold">Tambah</span>
+            </button>
+
+            <button 
               onClick={() => handleMenuClick('kelola')}
               className={`flex flex-col items-center gap-1 py-1 px-4 rounded-xl transition-all ${activeMenu === 'kelola' ? 'text-[#F7921C] font-bold' : 'text-[#64748B] hover:text-[#142B42]'}`}
             >
@@ -927,7 +946,7 @@ export default function PanelLayoutClient({ activeMenu, workspace, error, user, 
             >
               <div className="relative">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={activeMenu === 'approval' ? "2.5" : "2"} strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
-                {workspace?.subordinates?.some((i: any) => i.workflow_status === 'submitted') && (
+                {reviewQueueCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
                 )}
               </div>

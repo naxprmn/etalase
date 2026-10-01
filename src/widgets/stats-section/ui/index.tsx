@@ -267,9 +267,9 @@ const StatsSectionInner: React.FC = () => {
               <span className="text-[#142B42] text-[15px] font-bold">Kategori Terbanyak</span>
             </div>
             <div>
-              <div className="text-[#142B42] text-[24px] font-bold mb-1 leading-tight capitalize line-clamp-2">{data?.kpi_summary?.top_category?.kategori || '-'}</div>
+              <div className="text-[#142B42] text-[24px] font-bold mb-1 leading-tight line-clamp-2">{data?.kpi_summary?.top_category?.kategori ? getCategoryLabel(data.kpi_summary.top_category.kategori) : '-'}</div>
               <div className="flex items-center justify-between">
-                <span className="text-[#5D6A77] text-[13px]">Dokumen Terverifikasi</span>
+                <span className="text-[#5D6A77] text-[13px]">{data?.kpi_summary?.top_category ? `${data.kpi_summary.top_category.total} kegiatan` : 'Belum ada kegiatan'}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F7921C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
               </div>
             </div>

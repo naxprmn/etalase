@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { SearchBar } from '@/features/jurnal-filter/ui/search-bar.client'
 import { useJurnalFilter } from '@/features/jurnal-filter/lib/use-jurnal-filter'
 import { JurnalList } from '@/widgets/jurnal-list/ui'
 import { JurnalDetailModal } from '@/entities/jurnal/ui/jurnal-detail-modal.client'
@@ -11,7 +10,7 @@ import { CalendarSection } from '@/widgets/calendar/ui'
 import { DokumentasiSection } from '@/widgets/dokumentasi/ui'
 import { Footer } from '@/widgets/footer/ui'
 import { StatsSection } from '@/widgets/stats-section/ui'
-import { AuthButton } from '@/features/lawet-auth/ui/auth-button.client'
+import { getCategoryLabel } from '@/shared/ui/colors'
 import { loginAction } from '@/features/lawet-auth/api/login.action'
 import {
   HeroLogoReveal,
@@ -44,8 +43,20 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   const [showPin, setShowPin] = React.useState(false)
+  const [showForgotPin, setShowForgotPin] = React.useState(false)
+
+  // Opsi filter mengikuti data nyata: kategori dari Lawet Hub, tahun berjalan mundur ke 2024.
+  const [kategoriOptions, setKategoriOptions] = useState<string[]>([])
+  useEffect(() => {
+    fetch('/api/jurnal/kategori')
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data?.data)) setKategoriOptions(data.data) })
+      .catch(() => setKategoriOptions([]))
+  }, [])
+  const currentYear = new Date().getFullYear()
+  const tahunOptions = Array.from({ length: Math.max(currentYear - 2024 + 1, 1) }, (_, i) => String(currentYear - i))
   
-  const [username, setUsername] = useState('kasubag')
+  const [username, setUsername] = useState('')
   const [loginError, setLoginError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -325,7 +336,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
 
         {/* SECTION 2.5 - CALENDAR */}
         <div id="section-kalender" className="w-full pb-4 scroll-mt-16 md:scroll-mt-24">
-          <CalendarSection />
+          <CalendarSection onEventClick={(id) => setSelectedJurnalId(id)} />
         </div>
 
         {/* SECTION 3 - ARSIP JURNAL */}
@@ -367,7 +378,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                         className="w-full h-full flex items-center justify-between px-3 md:px-6 cursor-pointer text-[#5D6A77] text-[12px] md:text-[14px] font-medium"
                         onClick={() => { setIsKategoriOpen(!isKategoriOpen); setIsTahunOpen(false); }}
                       >
-                        <span className="truncate">{kategori || "Semua Kategori"}</span>
+                        <span className="truncate">{kategori ? getCategoryLabel(kategori) : "Semua Kategori"}</span>
                         <svg className={`w-4 h-4 md:w-5 md:h-5 text-[#9CA3AF] transition-transform duration-200 shrink-0 ${isKategoriOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                       </div>
                       
@@ -376,8 +387,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                           <div className="py-2">
                             {[
                               { label: "Semua Kategori", val: "" },
-                              { label: "Penanganan Pelanggaran", val: "Penanganan Pelanggaran" },
-                              { label: "Penyelesaian Sengketa", val: "Penyelesaian Sengketa" }
+                              ...kategoriOptions.map((k) => ({ label: getCategoryLabel(k), val: k })),
                             ].map((opt) => (
                               <div 
                                 key={opt.label}
@@ -410,8 +420,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                           <div className="py-2">
                             {[
                               { label: "Semua Tahun", val: "" },
-                              { label: "2026", val: "2026" },
-                              { label: "2025", val: "2025" }
+                              ...tahunOptions.map((y) => ({ label: y, val: y })),
                             ].map((opt) => (
                               <div 
                                 key={opt.label}
@@ -447,10 +456,27 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
               <span className="flex items-center gap-1 text-[#F7921C] font-semibold">Geser ke samping &rarr;</span>
             </div>
 
+            {date && (
+              <div className="max-w-[1282px] mx-auto mb-4 flex items-center gap-2 text-[13px] text-[#142B42]" style={{ fontFamily: 'Poppins' }}>
+                <span>Menampilkan kegiatan tanggal</span>
+                <button
+                  type="button"
+                  onClick={() => setFilter(q, kategori, tahun)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#F7921C]/10 px-3 py-1 font-semibold text-[#F7921C] hover:bg-[#F7921C]/20"
+                  aria-label="Hapus filter tanggal"
+                >
+                  {new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  <span aria-hidden>✕</span>
+                </button>
+              </div>
+            )}
+
             {/* Jurnal Grid List */}
             <JurnalList
               q={q}
               kategori={kategori}
+              tahun={tahun}
+              date={date}
               activeId={activeId}
               setActiveId={setActiveId}
               onActiveDateChange={setActiveDate}
@@ -464,7 +490,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
 
         {/* SECTION 4 - DOKUMENTASI KEGIATAN */}
         <div id="section-dokumentasi" className="scroll-mt-16 md:scroll-mt-24">
-          <DokumentasiSection photos={recentPhotos || []} />
+          <DokumentasiSection photos={recentPhotos || []} onPhotoClick={(id) => setSelectedJurnalId(id)} />
         </div>
 
         {/* FOOTER */}
@@ -480,45 +506,47 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
 
       {/* Login Modal Overlay */}
       {isLoginOpen && (
-        <div className="fixed inset-0 z-[110] flex justify-center p-4 bg-black/60 overflow-y-auto items-start md:items-center py-10" onClick={() => setIsLoginOpen(false)}>
+        <div className="fixed inset-0 z-[110] flex justify-center p-4 bg-black/60 overflow-y-auto items-center md:py-10" onClick={() => setIsLoginOpen(false)}>
           <div 
-            className="relative w-full max-w-[1306px] min-h-[auto] max-h-[90vh] bg-white rounded-[64px] flex overflow-hidden shadow-2xl mx-auto flex-col md:flex-row" 
+            className="relative w-full max-w-[420px] md:max-w-[1306px] min-h-[auto] max-h-[90vh] bg-white rounded-[28px] md:rounded-[64px] flex overflow-hidden shadow-2xl mx-auto flex-col md:flex-row" 
             onClick={(e) => e.stopPropagation()} 
             style={{ fontFamily: 'Poppins' }}
           >
             <button 
-              className="absolute top-8 right-8 text-gray-400 hover:text-gray-700 transition z-10"
+              className="absolute top-4 right-4 md:top-8 md:right-8 text-gray-400 hover:text-gray-700 transition z-10"
+              aria-label="Tutup"
               onClick={() => setIsLoginOpen(false)}
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
-            <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
+            <div className="hidden md:flex md:w-1/2 items-center justify-center p-8 bg-white">
               <img src="/assets/login-illustration.png" alt="Login Illustration" className="w-full max-w-[500px] object-contain" />
             </div>
-            <div className="w-full md:w-1/2 flex flex-col justify-center px-10 lg:px-24 py-12 relative bg-white overflow-y-auto">
-              <div className="flex justify-center mb-10">
-                <img src="/assets/login-logo.png" alt="ETALASE" className="h-[120px] object-contain" />
+            <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-10 lg:px-24 py-8 md:py-12 relative bg-white overflow-y-auto">
+              <div className="flex justify-center mb-5 md:mb-10">
+                <img src="/assets/login-logo.png" alt="ETALASE" className="h-[64px] md:h-[120px] object-contain" />
               </div>
-              <h2 className="text-[40px] font-medium text-[#142B42] mb-2 text-center">
+              <h2 className="text-[24px] md:text-[40px] font-medium text-[#142B42] mb-2 text-center">
                 Log in to your account
               </h2>
-              <p className="text-[18px] text-[#7B8EA0] font-medium mb-12 text-center">
+              <p className="text-[14px] md:text-[18px] text-[#7B8EA0] font-medium mb-6 md:mb-12 text-center">
                 welcome back! Please enter your detail
               </p>
               <div className="max-w-[520px] w-full mx-auto">
-                <div className="mb-8">
-                  <label className="block text-[16px] text-[#142B42] font-medium mb-3 ml-2">Username</label>
+                <div className="mb-5 md:mb-8">
+                  <label className="block text-[14px] md:text-[16px] text-[#142B42] font-medium mb-2 md:mb-3 ml-2">Username</label>
                   <input 
                     type="text" 
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Masukkan username (staff / kasubag)" 
-                    className="w-full h-[60px] bg-[#F2F5FF] rounded-[16px] px-6 text-[16px] text-[#142B42] font-medium outline-none border-2 border-transparent focus:border-[#4F83F5] transition-colors placeholder:text-[#142B42]/50" 
+                    placeholder="Masukkan username" 
+                    autoComplete="username"
+                    className="w-full h-[50px] md:h-[60px] bg-[#F2F5FF] rounded-[14px] md:rounded-[16px] px-5 md:px-6 text-[16px] text-[#142B42] font-medium outline-none border-2 border-transparent focus:border-[#4F83F5] transition-colors placeholder:text-[#142B42]/50" 
                   />
                 </div>
                   <div className="mb-4">
-                    <div className="flex items-center justify-between mb-3 px-2">
-                      <label className="text-[16px] text-[#142B42] font-medium">PIN</label>
+                    <div className="flex items-center justify-between mb-2 md:mb-3 px-2">
+                      <label className="text-[14px] md:text-[16px] text-[#142B42] font-medium">PIN</label>
                       <button 
                         onClick={() => setShowPin(!showPin)}
                         className="text-[#7B8EA0] hover:text-[#142B42] transition-colors"
@@ -530,17 +558,18 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                         )}
                       </button>
                     </div>
-                    <div className="flex justify-center gap-4 sm:gap-6">
+                    <div className="flex justify-center gap-3 sm:gap-6">
                       {[0, 1, 2, 3].map((index) => (
                         <input 
                           key={index} 
                           ref={(el) => { pinRefs.current[index] = el }}
                           type={showPin ? "text" : "password"}
                           maxLength={1} 
+                          inputMode="numeric"
                           value={pin[index]}
                           onChange={(e) => handlePinChange(index, e.target.value)}
                           onKeyDown={(e) => handlePinKeyDown(index, e)}
-                          className="flex-1 aspect-square max-w-[100px] max-h-[100px] bg-[#F2F5FF] rounded-[16px] text-center text-[40px] font-bold text-[#142B42] outline-none border-2 border-transparent focus:border-[#4F83F5] transition-colors [&::-ms-reveal]:hidden [&::-ms-clear]:hidden" 
+                          className="flex-1 min-w-0 aspect-square max-w-[64px] md:max-w-[100px] max-h-[100px] bg-[#F2F5FF] rounded-[14px] md:rounded-[16px] text-center text-[28px] md:text-[40px] font-bold text-[#142B42] outline-none border-2 border-transparent focus:border-[#4F83F5] transition-colors [&::-ms-reveal]:hidden [&::-ms-clear]:hidden" 
                         />
                       ))}
                     </div>
@@ -550,10 +579,20 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                         {loginError}
                       </div>
                     )}
-                    <div className="flex justify-end mt-4 mb-8">
-                      <button className="text-[#F14141] font-medium text-[14px] hover:underline">
+                    <div className="flex flex-col items-end mt-4 md:mb-8 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPin(v => !v)}
+                        className="text-[#F14141] font-medium text-[14px] hover:underline"
+                        aria-expanded={showForgotPin}
+                      >
                         lupa PIN
                       </button>
+                      {showForgotPin && (
+                        <p className="w-full rounded-[12px] bg-[#FFF5EA] px-4 py-3 text-[13px] text-[#7A4A12]">
+                          Akun dan PIN dikelola di Lawet Hub. Hubungi Superadmin Lawet Hub untuk mengatur ulang PIN Anda.
+                        </p>
+                      )}
                     </div>
               </div>
             </div>

@@ -13,13 +13,16 @@ interface JurnalDetailModalProps {
   isOpen: boolean
   onClose: () => void
   isLoggedIn?: boolean
+  /** Data jurnal yang sudah dimiliki pemanggil (mis. panel untuk jurnal yang belum terbit). */
+  initialData?: Record<string, any> | null
 }
 
 export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
   id,
   isOpen,
   onClose,
-  isLoggedIn = false
+  isLoggedIn = false,
+  initialData = null,
 }) => {
   const [zoomedImage, setZoomedImage] = React.useState<string | null>(null);
   const [zoomedIndex, setZoomedIndex] = React.useState<number>(0);
@@ -81,13 +84,13 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
 
     },
 
-    enabled: !!id && isOpen,
+    enabled: !!id && isOpen && !initialData,
 
   })
 
 
 
-  const item = response?.data
+  const item = initialData ?? response?.data
 
 
 

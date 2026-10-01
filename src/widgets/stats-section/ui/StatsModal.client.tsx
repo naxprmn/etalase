@@ -26,59 +26,24 @@ interface StatsModalProps {
   activeCard?: 'overview' | 'kategori' | 'mitra' | 'berita'
 }
 
-// Dummy data matching the EXACT Figma heights and values
-const barData = [
-  { date: '0', total: 25 },
-  { date: '1', total: 38 },
-  { date: '2', total: 2 },
-  { date: '3', total: 40 },
-  { date: '4', total: 4 },
-  { date: '5', total: 25 },
-  { date: '6', total: 28 },
-  { date: '7', total: 30 },
-  { date: '8', total: 95 },
-  { date: '9', total: 63 },
-  { date: '10', total: 72 },
-  { date: '11', total: 64 },
-  { date: '12', total: 76 },
-  { date: '13', total: 48 },
-  { date: '14', total: 0 },
-  { date: '15', total: 74 },
-]
-
-
-
-// Pie Chart data matching the exact Figma colors
-const pieData = [
-  { name: 'Sosialisasi', value: 400, color: '#706EE7' },
-  { name: 'Rapat Rutin', value: 300, color: '#FF928A' },
-  { name: 'MoU', value: 300, color: '#FFAE4C' },
-  { name: 'Lainnya', value: 200, color: '#3CC3DF' },
-]
 
 const renderCustomBarLabel = (props: any) => {
-  const { x, y, width, value, index } = props;
-  // Figma mockup specific: show labels '2', '4', and '14'
-  if (index === 2 || index === 4 || index === 14) {
-    const labelValue = index === 14 ? 14 : value;
-    // Adjust y so it floats slightly above the bar (or above the 0 line for index 14)
-    const yPos = index === 14 ? y - 10 : y - 8;
-    return (
-      <text x={x + width / 2} y={yPos} fill="#000000" fontSize={11} textAnchor="middle" fontWeight="500">
-        {labelValue}
-      </text>
-    );
-  }
-  return null;
+  const { x, y, width, value } = props;
+  if (!value) return null;
+  return (
+    <text x={x + width / 2} y={y - 8} fill="#000000" fontSize={11} textAnchor="middle" fontWeight="500">
+      {value}
+    </text>
+  );
 }
 
 export const StatsModal = ({ isOpen, onClose, data, activeCard = 'overview' }: StatsModalProps & { activeCard?: 'overview' | 'kategori' | 'mitra' | 'berita' }) => {
-  // Use real data if available, otherwise fallback to dummy
+  // Selalu dari data nyata; tampilan kosong bila data belum tersedia.
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
   const actualBarData = data?.monthly_trend?.map((item: any) => ({
     date: monthNames[item.month - 1] || item.month.toString(),
     total: item.total
-  })) || barData;
+  })) || [];
 
   const actualDailyTrend = data?.daily_trend?.length ? data.daily_trend : [
     { day: 'Sen', total: 0 },
@@ -94,18 +59,11 @@ export const StatsModal = ({ isOpen, onClose, data, activeCard = 'overview' }: S
     name: getCategoryLabel(key) || key,
     value: val as number,
     color: getCategoryColor(key)
-  })).filter(x => x.value > 0) : pieData;
+  })).filter(x => x.value > 0) : [];
 
 
-  // Dummy data for Mitra modal
-  // Media Stats
-  const dummyMediaStats = {
-    'Pendidikan': 30,
-    'Pemda': 45,
-    'Swasta': 20,
-    'Lainnya': 5
-  };
-  const actualMediaStats = data?.media_stats || dummyMediaStats;
+  // Statistik media & mitra selalu dari data nyata; kosong bila belum ada.
+  const actualMediaStats: Record<string, number> = data?.media_stats || {};
   const mediaColors: Record<string, string> = {
     'Pendidikan': '#818CF8', // indigo-400
     'Pemda': '#F87171', // red-400
@@ -118,13 +76,7 @@ export const StatsModal = ({ isOpen, onClose, data, activeCard = 'overview' }: S
     color: mediaColors[name] || '#9CA3AF'
   })).sort((a, b) => b.value - a.value);
 
-  const dummyMitraStats = {
-    'Pemerintah Daerah': 145,
-    'Instansi Pendidikan': 118,
-    'Organisasi Masyarakat': 78,
-    'Swasta / Lainnya': 47
-  };
-  const actualMitraStats = data?.mitra_stats || dummyMitraStats;
+  const actualMitraStats: Record<string, number> = data?.mitra_stats || {};
   const totalMitra = Object.values(actualMitraStats).reduce((a: any, b: any) => a + b, 0) || 1;
   const mitraColors: Record<string, string> = {
     'Pemerintah Daerah': '#60A5FA', // blue-400
@@ -191,7 +143,7 @@ export const StatsModal = ({ isOpen, onClose, data, activeCard = 'overview' }: S
                       <BarChart data={actualBarData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid stroke="#CCCCCC" strokeWidth={1} vertical={true} horizontal={true} />
                         <XAxis dataKey="date" axisLine={{ stroke: '#CCCCCC', strokeWidth: 1 }} tickLine={{ stroke: '#000000', strokeWidth: 1 }} tick={{ fill: '#000000', fontSize: 11 }} dy={8} />
-                        <YAxis axisLine={{ stroke: '#CCCCCC', strokeWidth: 1 }} tickLine={{ stroke: '#000000', strokeWidth: 1 }} tick={{ fill: '#000000', fontSize: 11 }} ticks={[0, 25, 50, 75, 100]} dx={-4} />
+                        <YAxis axisLine={{ stroke: '#CCCCCC', strokeWidth: 1 }} tickLine={{ stroke: '#000000', strokeWidth: 1 }} tick={{ fill: '#000000', fontSize: 11 }} allowDecimals={false} dx={-4} />
                         <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                         <Bar dataKey="total" fill="#4EA7CC" radius={[0, 0, 0, 0]} barSize={32}>
                           <LabelList content={renderCustomBarLabel} />

@@ -1,7 +1,9 @@
 'use client'
 import React, { useState } from 'react'
 
-export const DokumentasiSection = ({ photos = [] }: { photos?: Array<{url: string, judul: string, kategori: string}> }) => {
+type Foto = { id?: string, url: string, judul: string, kategori: string }
+
+export const DokumentasiSection = ({ photos = [], onPhotoClick }: { photos?: Foto[], onPhotoClick?: (jurnalId: string) => void }) => {
   const [startIndex, setStartIndex] = useState(0)
 
   const handleNext = () => {
@@ -16,13 +18,11 @@ export const DokumentasiSection = ({ photos = [] }: { photos?: Array<{url: strin
     }
   }
 
-  const visiblePhotos = photos.length > 3 
-    ? [
-        photos[startIndex],
-        photos[(startIndex + 1) % photos.length],
-        photos[(startIndex + 2) % photos.length]
-      ]
-    : photos;
+  // Desktop menampilkan jendela 3 foto dengan panah; mobile menampilkan semua foto (geser).
+  const isWindowed = photos.length > 3
+  const orderedPhotos = photos.length > 3
+    ? [...photos.slice(startIndex), ...photos.slice(0, startIndex)]
+    : photos
 
   return (
     <section className="relative w-full pt-10 pb-20 overflow-hidden" style={{ fontFamily: 'Poppins' }}>
@@ -70,8 +70,15 @@ export const DokumentasiSection = ({ photos = [] }: { photos?: Array<{url: strin
 
           {/* Cards Grid */}
           <div className={`flex md:grid overflow-x-auto snap-x snap-mandatory md:overflow-visible hide-scrollbar gap-4 md:gap-8 mx-auto -mx-4 px-4 pb-4 md:mx-auto md:px-0 md:pb-0 ${photos.length === 1 ? 'md:max-w-[486px]' : photos.length === 2 ? 'md:grid-cols-2 md:max-w-[800px]' : 'md:grid-cols-3'}`}>
-            {photos.length > 0 ? visiblePhotos.map((foto, idx) => (
-              <div key={`${startIndex}-${idx}`} className="min-w-[80vw] max-w-[340px] md:max-w-none snap-center md:min-w-0 md:snap-none relative flex flex-col items-center justify-center bg-[#F8FAFD] rounded-[24px] md:rounded-[32px] p-2.5 md:p-3 hover:shadow-xl transition-all duration-300 group cursor-pointer w-full shrink-0 md:shrink h-[260px] sm:h-[340px] md:h-[486px]">
+            {photos.length > 0 ? orderedPhotos.map((foto, idx) => (
+              <div
+                key={`${startIndex}-${idx}`}
+                role={foto?.id && onPhotoClick ? 'button' : undefined}
+                tabIndex={foto?.id && onPhotoClick ? 0 : undefined}
+                onClick={() => foto?.id && onPhotoClick?.(foto.id)}
+                onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && foto?.id) { e.preventDefault(); onPhotoClick?.(foto.id) } }}
+                aria-label={foto?.judul ? `Buka jurnal ${foto.judul}` : undefined}
+                className={`${isWindowed && idx >= 3 ? 'md:hidden ' : ''}min-w-[80vw] max-w-[340px] md:max-w-none snap-center md:min-w-0 md:snap-none relative flex flex-col items-center justify-center bg-[#F8FAFD] rounded-[24px] md:rounded-[32px] p-2.5 md:p-3 hover:shadow-xl transition-all duration-300 group cursor-pointer w-full shrink-0 md:shrink h-[260px] sm:h-[340px] md:h-[486px]`}>
                 <div className="w-full h-full rounded-[20px] md:rounded-[30px] overflow-hidden relative">
                   <img src={foto?.url} alt={foto?.judul} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 idle-animate" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent md:bg-black/20 md:group-hover:bg-black/40 transition-colors"></div>

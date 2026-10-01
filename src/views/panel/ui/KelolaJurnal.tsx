@@ -6,13 +6,15 @@ import { Search, Eye, Edit2, Trash2, ChevronLeft, ChevronRight, AlertTriangle, C
 import { useRouter } from 'next/navigation';
 import { deleteJurnalAction } from '@/features/jurnal-saya/api/delete.action';
 import { JurnalDetailModal } from '@/entities/jurnal/ui/jurnal-detail-modal.client';
+import { canDeleteJurnal, canEditJurnal, isInProcess, workflowStatusLabel } from '@/entities/jurnal/lib/workflow-status';
+import { getCategoryLabel } from '@/shared/ui/colors';
 
 const COLORS = ['#4ade80', '#fb923c', '#f87171', '#60a5fa', '#a78bfa'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
 
 export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWorkspace | null, error: string | null }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Semua'|'Draft'|'Terbit'>('Semua');
+  const [activeTab, setActiveTab] = useState<'Semua'|'Proses'|'Terbit'>('Semua');
   const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,8 +51,14 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
   
   const total = allItems.length;
   const published = allItems.filter(i => i.status === 'published').length;
+  // Status Lawet Hub: draft = menunggu review, rejected = dikembalikan,
+  // publish_pending = disetujui & sedang dikirim ke etalase.
   const draft = allItems.filter(i => i.status === 'draft').length;
+  const rejected = allItems.filter(i => i.status === 'rejected').length;
   const pending = allItems.filter(i => i.status === 'publish_pending').length;
+  const viewer = workspace
+    ? { name: workspace.viewerName, role: { is_superadmin: workspace.viewerIsSuperadmin } }
+    : null;
 
   const availableYears = useMemo(() => {
     const years = new Set<number>();
@@ -79,16 +87,17 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
   
   const pieStatusData = useMemo(() => {
     return [
-      { name: 'Terbit', value: published },
-      { name: 'Menunggu', value: pending },
-      { name: 'Draft', value: draft }
+      { name: workflowStatusLabel('published'), value: published },
+      { name: workflowStatusLabel('draft'), value: draft },
+      { name: workflowStatusLabel('publish_pending'), value: pending },
+      { name: workflowStatusLabel('rejected'), value: rejected },
     ];
-  }, [published, pending, draft]);
+  }, [published, pending, draft, rejected]);
 
   const kategoriData = useMemo(() => {
     const counts: Record<string, number> = {};
     allItems.forEach(item => {
-      const cat = item.kategori || 'Lainnya';
+      const cat = item.kategori ? getCategoryLabel(item.kategori) : 'Lainnya';
       counts[cat] = (counts[cat] || 0) + 1;
     });
     
@@ -114,11 +123,13 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
     }));
   }, [allItems]);
 
+  const detailItem = detailPopup ? allItems.find(i => i.id === detailPopup) ?? null : null;
+
   // Filtering Logic
   const filteredItems = useMemo(() => {
     let items = allItems;
-    if (activeTab === 'Draft') {
-       items = items.filter(i => i.status === 'draft' || i.status === 'publish_pending');
+    if (activeTab === 'Proses') {
+       items = items.filter(i => isInProcess(i.status));
     } else if (activeTab === 'Terbit') {
        items = items.filter(i => i.status === 'published');
     }
@@ -164,7 +175,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
       <div className="flex flex-col md:flex-row gap-6 mb-6">
         {/* Left: 4 Metric Cards (2x2) */}
         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="bg-white rounded-[17px] border border-[#0F3E79] p-5 shadow-sm h-[160px] flex flex-col justify-between">
+          <button type="button" onClick={() => { setActiveTab('Semua'); setCurrentPage(1); }} className="text-left bg-white rounded-[17px] border border-[#0F3E79] p-5 shadow-sm h-[160px] flex flex-col justify-between hover:shadow-md transition-shadow">
             <div>
               <h4 className="text-[#142B42] text-[13px] font-bold mb-4 flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#142B42]"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -173,12 +184,12 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
               <p className="text-[32px] font-bold text-[#142B42] leading-none mb-1">{total}</p>
             </div>
             <div className="flex items-center justify-between w-full">
-              <span className="text-[11px] font-medium text-[#7B8EA0]">Bulan September 2026</span>
+              <span className="text-[11px] font-medium text-[#7B8EA0]">Semua jurnal yang tercatat</span>
               <ChevronRight size={14} className="text-[#142B42]" />
             </div>
-          </div>
+          </button>
           
-          <div className="bg-white rounded-[17px] border border-[#FDE68A] p-5 shadow-sm h-[160px] flex flex-col justify-between">
+          <button type="button" onClick={() => { setActiveTab('Terbit'); setCurrentPage(1); }} className="text-left bg-white rounded-[17px] border border-[#FDE68A] p-5 shadow-sm h-[160px] flex flex-col justify-between hover:shadow-md transition-shadow">
             <div>
               <h4 className="text-[#142B42] text-[13px] font-bold mb-4 flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#142B42]"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
@@ -187,38 +198,38 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
               <p className="text-[32px] font-bold text-[#142B42] leading-none mb-1">{published}</p>
             </div>
             <div className="flex items-center justify-between w-full">
-              <span className="text-[11px] font-medium text-[#7B8EA0]">Dokumen Terverifikasi</span>
+              <span className="text-[11px] font-medium text-[#7B8EA0]">Sudah tayang di etalase publik</span>
               <ChevronRight size={14} className="text-[#F7921C]" />
             </div>
-          </div>
+          </button>
           
-          <div className="bg-white rounded-[17px] border border-[#0F3E79] p-5 shadow-sm h-[160px] flex flex-col justify-between">
+          <button type="button" onClick={() => { setActiveTab('Proses'); setCurrentPage(1); }} className="text-left bg-white rounded-[17px] border border-[#0F3E79] p-5 shadow-sm h-[160px] flex flex-col justify-between hover:shadow-md transition-shadow">
             <div>
               <h4 className="text-[#142B42] text-[13px] font-bold mb-4 flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#142B42]"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Jumlah Draft
+                Menunggu Review
               </h4>
               <p className="text-[32px] font-bold text-[#142B42] leading-none mb-1">{draft}</p>
             </div>
             <div className="flex items-center justify-between w-full">
-              <span className="text-[11px] font-medium text-transparent">Spasi</span>
+              <span className="text-[11px] font-medium text-[#7B8EA0]">Perlu ditinjau di menu Approval</span>
               <ChevronRight size={14} className="text-[#142B42]" />
             </div>
-          </div>
+          </button>
           
-          <div className="bg-white rounded-[17px] border border-[#FDE68A] p-5 shadow-sm h-[160px] flex flex-col justify-between">
+          <button type="button" onClick={() => { setActiveTab('Proses'); setCurrentPage(1); }} className="text-left bg-white rounded-[17px] border border-[#FDE68A] p-5 shadow-sm h-[160px] flex flex-col justify-between hover:shadow-md transition-shadow">
             <div>
               <h4 className="text-[#142B42] text-[13px] font-bold mb-4 flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#142B42]"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10.4 12.6a2 2 0 1 1 3 3L17 19"/><path d="M4 15V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2H4"/></svg>
-                Menunggu Verifikasi
+                Dikembalikan
               </h4>
-              <p className="text-[32px] font-bold text-[#142B42] leading-none mb-1">{pending}</p>
+              <p className="text-[32px] font-bold text-[#142B42] leading-none mb-1">{rejected}</p>
             </div>
             <div className="flex items-center justify-between w-full">
-              <span className="text-[11px] font-medium text-transparent">Spasi</span>
+              <span className="text-[11px] font-medium text-[#7B8EA0]">Menunggu perbaikan pengaju</span>
               <ChevronRight size={14} className="text-[#F7921C]" />
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Right: Calendar */}
@@ -251,10 +262,8 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                     <ChevronRight size={16} className="text-[#142B42]" />
                   </button>
                 </div>
-                <div className="flex bg-[#F0F4F8] rounded-full p-1 items-center shrink-0">
-                  <div className="text-[9px] px-2 py-1 font-bold text-[#7B8EA0] cursor-pointer hover:text-[#142B42]">Hari</div>
-                  <div className="text-[9px] px-2 py-1 font-bold text-[#7B8EA0] cursor-pointer hover:text-[#142B42]">Minggu</div>
-                  <div className="text-[9px] px-2 py-1 font-bold bg-[#254360] text-white rounded-full shadow-sm">Bulan</div>
+                <div className="text-[10px] px-2 py-1 font-bold text-[#7B8EA0] shrink-0">
+                  {calendarDate.getFullYear()}
                 </div>
               </div>
             
@@ -329,9 +338,8 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie data={pieStatusData} cx="50%" cy="45%" innerRadius={0} outerRadius={70} dataKey="value">
-                <Cell fill="#4ade80" /> {/* Di Terima / Terbit */}
-                <Cell fill="#fbbf24" /> {/* Menunggu */}
-                <Cell fill="#f87171" /> {/* Di Tolak / Draft */}
+                {/* Terbit, Menunggu Review, Sedang Diterbitkan, Dikembalikan */}
+                {['#4ade80', '#fbbf24', '#60a5fa', '#f87171'].map((fill) => <Cell key={fill} fill={fill} />)}
               </Pie>
               <Tooltip />
               <Legend 
@@ -407,10 +415,10 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
               Semua
             </button>
             <button 
-              onClick={() => { setActiveTab('Draft'); setCurrentPage(1); }}
-              className={`flex-1 sm:flex-none px-5 py-1.5 text-sm rounded-full font-medium transition-colors whitespace-nowrap ${activeTab === 'Draft' ? 'bg-[#142B42] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
+              onClick={() => { setActiveTab('Proses'); setCurrentPage(1); }}
+              className={`flex-1 sm:flex-none px-5 py-1.5 text-sm rounded-full font-medium transition-colors whitespace-nowrap ${activeTab === 'Proses' ? 'bg-[#142B42] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}
             >
-              Draft
+              Dalam Proses
             </button>
             <button 
               onClick={() => { setActiveTab('Terbit'); setCurrentPage(1); }}
@@ -442,16 +450,21 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                 <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50 divide-x divide-gray-100">
                   <td className="py-3 px-4">{(validCurrentPage - 1) * itemsPerPage + idx + 1}</td>
                   <td className="py-3 px-4 font-medium text-blue-900">{item.judul || 'Untitled'}</td>
-                  <td className="py-3 px-4 whitespace-nowrap">{item.owner_name || 'Staff'}</td>
+                  <td className="py-3 px-4 whitespace-nowrap">{item.owner_name || '-'}</td>
                   <td className="py-3 px-4 whitespace-nowrap">{item.tanggal_kegiatan || '-'}</td>
                   <td className="py-3 px-4">
                     <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] rounded-full font-medium whitespace-nowrap">
-                      {item.kategori || 'Umum'}
+                      {item.kategori ? getCategoryLabel(item.kategori) : '-'}
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <span className={isPub ? 'px-3 py-1 text-[11px] rounded-full font-medium bg-green-100 text-green-700' : 'px-3 py-1 text-[11px] rounded-full font-medium bg-orange-100 text-orange-700'}>
-                      {isPub ? 'Terbit' : 'Draft'}
+                    <span className={`px-3 py-1 text-[11px] rounded-full font-medium whitespace-nowrap ${
+                      isPub ? 'bg-green-100 text-green-700'
+                      : item.status === 'rejected' ? 'bg-red-100 text-red-700'
+                      : item.status === 'publish_pending' ? 'bg-blue-100 text-blue-700'
+                      : 'bg-orange-100 text-orange-700'
+                    }`}>
+                      {workflowStatusLabel(item.status)}
                     </span>
                   </td>
                   <td className="py-3 px-4">
@@ -470,7 +483,8 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                         <Eye size={16} strokeWidth={2.5} />
                       </button>
                       <>
-                          <button 
+                          {canEditJurnal(viewer, item, workspace?.viewerId) && (
+                          <button
                             type="button"
                             onClick={() => router.push(`/panel?tab=edit&editId=${item.id}`)}
                             className="text-[#142B42] hover:text-blue-700 transition-colors focus:outline-none"
@@ -478,7 +492,9 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                           >
                             <Edit2 size={16} strokeWidth={2.5} />
                           </button>
-                          <button 
+                          )}
+                          {canDeleteJurnal(viewer, item, workspace?.viewerId) && (
+                          <button
                             type="button"
                             onClick={(e) => { 
                               e.stopPropagation();
@@ -489,6 +505,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                           >
                             <Trash2 size={16} strokeWidth={2.5} />
                           </button>
+                          )}
                         </>
                       </div>
                   </td>
@@ -557,11 +574,17 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                 </button>
                 <button 
                   onClick={async () => {
+                    if (!deletePopup) return;
                     setIsDeleting(true);
-                    await deleteJurnalAction(deletePopup);
+                    const res = await deleteJurnalAction(deletePopup);
                     setIsDeleting(false);
+                    if (!res.success) {
+                      showToast('Gagal menghapus jurnal: ' + res.error, 'error');
+                      return;
+                    }
                     setDeletePopup(null);
-                    showToast("Jurnal berhasil dihapus secara permanen", "success");
+                    showToast('Jurnal berhasil dihapus', 'success');
+                    router.refresh();
                   }}
                   disabled={isDeleting}
                   className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors"
@@ -575,11 +598,12 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
       )}
 
       {/* JURNAL DETAIL MODAL */}
-      <JurnalDetailModal 
-        id={detailPopup} 
-        isOpen={!!detailPopup} 
-        onClose={() => setDetailPopup(null)} 
+      <JurnalDetailModal
+        id={detailPopup}
+        isOpen={!!detailPopup}
+        onClose={() => setDetailPopup(null)}
         isLoggedIn={true}
+        initialData={detailItem ? { ...detailItem, ringkasan: detailItem.deskripsi } : null}
       />
     </div>
   );

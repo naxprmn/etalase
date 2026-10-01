@@ -3,7 +3,7 @@ import LandingView from '@/views/landing'
 import { getMeAction } from '@/entities/lawet-user'
 import { db } from '@/shared/lib/db'
 import { jurnal } from '../../drizzle/schema'
-import { eq, desc } from 'drizzle-orm'
+import { and, eq, desc } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +16,7 @@ export default async function Home() {
     subtitle: 'Arsip Jurnal Bawaslu Kebumen'
   }
 
-  const publishedJurnals = await db.select().from(jurnal).where(eq(jurnal.workflow_status, 'published')).orderBy(desc(jurnal.created_at)).limit(10);
+  const publishedJurnals = await db.select().from(jurnal).where(and(eq(jurnal.workflow_status, 'published'), eq(jurnal.is_published, true))).orderBy(desc(jurnal.created_at)).limit(10);
   
   const recentPhotos = [];
   for (const j of publishedJurnals) {
@@ -24,6 +24,7 @@ export default async function Home() {
       for (const d of j.dokumentasi) {
         if (d.url && (d.url.startsWith('http') || d.url.startsWith('/') || d.url.startsWith('data:'))) {
           recentPhotos.push({
+            id: j.id,
             url: d.url,
             judul: j.judul,
             kategori: j.kategori

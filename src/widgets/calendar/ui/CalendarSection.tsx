@@ -9,9 +9,10 @@ const MONTH_NAMES = [
 
 const DAY_NAMES = ['Ming', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-export const CalendarSection = ({ onEventClick }: { onEventClick?: () => void }) => {
+export const CalendarSection = ({ onEventClick }: { onEventClick?: (jurnalId: string) => void }) => {
   const router = useRouter();
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 8, 1)); // September 2026 (0-indexed month 8)
+  // Mulai dari bulan berjalan.
+  const [currentDate, setCurrentDate] = useState(() => { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1) });
   const [activeDates, setActiveDates] = useState<number[]>([]);
   const [eventsMap, setEventsMap] = useState<Record<number, { id: string, judul: string }[]>>({});
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
@@ -218,8 +219,12 @@ export const CalendarSection = ({ onEventClick }: { onEventClick?: () => void })
                                           className="flex items-start gap-2.5 cursor-pointer group"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            if(onEventClick) onEventClick();
-                                            router.push(`/?date=${year}-${String(month + 1).padStart(2, '0')}-${String(cell.day).padStart(2, '0')}#section-arsip`);
+                                            // Klik judul kegiatan → buka detail jurnal tersebut.
+                                            if (onEventClick) {
+                                              onEventClick(evt.id);
+                                            } else {
+                                              router.push(`/?date=${year}-${String(month + 1).padStart(2, '0')}-${String(cell.day).padStart(2, '0')}#section-arsip`);
+                                            }
                                             setSelectedDate(null);
                                           }}
                                         >

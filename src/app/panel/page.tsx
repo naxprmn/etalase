@@ -1,5 +1,5 @@
 import { getJurnalWorkspaceAction } from '@/features/jurnal-saya/api/get-my-jurnals.action'
-import { getMeAction } from '@/entities/lawet-user'
+import { canApproveJurnal, getMeAction } from '@/entities/lawet-user'
 import PanelLayoutClient from '@/views/panel/ui/panel-layout.client'
 
 import { redirect } from 'next/navigation'
@@ -13,7 +13,7 @@ export default async function PanelPage({ searchParams }: { searchParams: { tab?
     redirect('/')
   }
 
-  const isKasubag = user?.role?.name?.toLowerCase().includes('kasubag') || user?.role?.can_approve;
+  const isKasubag = canApproveJurnal(user);
   const defaultTab = isKasubag ? 'kelola' : 'tambah';
   const activeMenu = searchParams.tab || defaultTab;
   

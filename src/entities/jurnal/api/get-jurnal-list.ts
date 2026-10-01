@@ -30,13 +30,15 @@ export async function getJurnalList({ q = '', kategori = '', cursor = '', limit 
   }
 
   if (kategori) {
-    conditions.push(eq(jurnal.kategori, kategori))
+    conditions.push(sql`LOWER(${jurnal.kategori}) = LOWER(${kategori})`)
   }
 
   if (q) {
     conditions.push(
       or(
         ilike(jurnal.judul, `%${q}%`),
+        ilike(jurnal.ringkasan, `%${q}%`),
+        ilike(jurnal.redaksi, `%${q}%`),
         sql`${jurnal.pihak_terkait}::text ILIKE ${`%${q}%`}`,
         sql`${jurnal.tags}::text ILIKE ${`%${q}%`}`
       )!

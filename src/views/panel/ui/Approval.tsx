@@ -38,6 +38,16 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
   const [rejectReason, setRejectReason] = useState("");
   const [rejectError, setRejectError] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // Setelah aksi berhasil: tampilkan hasil, kosongkan pilihan, muat ulang antrean dari Lawet Hub.
+  const finishReview = (message: string) => {
+    setNotice(message);
+    setSelectedQueue(null);
+    setIsApproved(false);
+    router.refresh();
+    setTimeout(() => setNotice(null), 5000);
+  };
 
 
 
@@ -48,6 +58,11 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
   return (
 
     <div className="px-4 md:px-8 pt-4 md:pt-8 pb-8">
+      {notice && (
+        <div role="status" className="mb-6 rounded-[10px] border border-[#86EFAC] bg-[#F0FDF4] px-4 py-3 text-[14px] font-semibold text-[#15803D]">
+          {notice}
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-8">
 
@@ -399,7 +414,8 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
                   </button>
 
-                  <button 
+                  {workspace?.viewerIsSuperadmin && (
+                  <button
 
                     onClick={() => router.push(`?tab=edit&editId=${selectedItem.id}`)}
 
@@ -410,10 +426,11 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
                     Edit Jurnal
 
                   </button>
+                  )}
 
                   <button 
 
-                    onClick={() => setIsApproveModalOpen(true)}
+                    onClick={() => { setRejectError(""); setIsApproveModalOpen(true); }}
 
                     className="flex-1 flex items-center justify-center gap-2 h-[40px] rounded-[6px] bg-[#EE8810] text-white text-[12px] font-bold hover:bg-[#d4780e] transition-colors"
 
@@ -559,8 +576,9 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
                   }
 
                   setIsRejectModalOpen(false);
+                  setRejectReason("");
 
-                  setIsApproved(true);
+                  finishReview(`"${selectedItem.judul}" dikembalikan ke pengaju beserta catatan perbaikan.`);
 
                 }}
 
@@ -600,7 +618,7 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
             <p className="text-[#5D6A77] text-[16px] leading-relaxed mb-6">
 
-              Anda akan menyetujui <span className="font-bold text-[#142B42]">{selectedItem.judul}</span>. Setelah disetujui, jurnal ini terkunci dan tidak dapat diubah lagi oleh siapa pun.
+              Anda akan menyetujui <span className="font-bold text-[#142B42]">{selectedItem.judul}</span>. Setelah disetujui, jurnal akan diterbitkan ke etalase publik dan tidak dapat diubah lagi oleh pengaju.
 
             </p>
 
@@ -615,6 +633,7 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
               </div>
             </div>
 
+            {rejectError && !isRejectModalOpen && <p className="text-red-500 text-[13px] mb-3">{rejectError}</p>}
             <div className="flex justify-end gap-3">
 
               <button 
@@ -643,13 +662,13 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
                   setIsRejecting(false);
 
                   if (res && !res.success) {
-                    alert(res.error || "Gagal menyetujui jurnal.");
+                    setRejectError(res.error || "Gagal menyetujui jurnal.");
                     return;
                   }
 
-                  setIsApproved(true);
-
                   setIsApproveModalOpen(false);
+
+                  finishReview(`"${selectedItem.judul}" disetujui dan sedang diterbitkan ke etalase publik.`);
 
                 }}
 
