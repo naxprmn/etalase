@@ -40,7 +40,8 @@ export const jurnalSubmissionSchema = z.object({
   custom_fields: z.array(customFieldItemSchema).default([]),
   tags: z.array(z.string()).default([]),
   link_publikasi: z.union([z.string().url('Link publikasi tidak valid'), z.literal('')]).optional(),
-  is_published: z.boolean().default(false)
+  is_published: z.boolean().default(false),
+  status: z.enum(['draft', 'published', 'rejected']).optional()
 })
 
 export type JurnalSubmissionPayload = z.infer<typeof jurnalSubmissionSchema>

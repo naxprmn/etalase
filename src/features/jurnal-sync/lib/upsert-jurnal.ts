@@ -24,7 +24,8 @@ interface JurnalPayload {
   custom_fields?: any[]
   tags?: any[] | null
   redaksi?: string | null
-  divisi?: string | null
+    divisi?: string | null
+  is_published?: boolean
 }
 
 export async function upsertJurnal(payload: JurnalPayload, database: DatabaseExecutor = db) {
@@ -70,6 +71,20 @@ export async function upsertJurnal(payload: JurnalPayload, database: DatabaseExe
     }))
   }
 
+  // Tentukan visibilitas jurnal (publik vs privat)
+  let isPublished = true
+  if (typeof payload.is_published === 'boolean') {
+    isPublished = payload.is_published
+  } else {
+    const customFields = Array.isArray(payload.custom_fields) ? payload.custom_fields : []
+    const isPubField = customFields.find((f: any) => f && (f.label === 'is_published' || f.label === 'akses'))
+    if (isPubField) {
+      isPublished = isPubField.value === 'true' || isPubField.value === 'publik'
+    } else if (incomingDocs.length > 0) {
+      isPublished = incomingDocs.some(d => d.is_public !== false)
+    }
+  }
+
   const valuesToUpsert = {
     source_id: payload.source_id,
     judul: payload.judul,
@@ -84,7 +99,7 @@ export async function upsertJurnal(payload: JurnalPayload, database: DatabaseExe
     tags: payload.tags || [],
     redaksi: payload.redaksi || null,
     divisi: payload.divisi || null,
-    is_published: true, // Default to true on publish sync
+    is_published: isPublished,
     workflow_status: 'published',
     synced_at: new Date(),
     updated_at: new Date()

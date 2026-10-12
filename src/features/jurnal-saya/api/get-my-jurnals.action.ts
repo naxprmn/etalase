@@ -114,11 +114,19 @@ function normalizeJurnal(
     link_publikasi: readString(item.link_publikasi),
     dokumentasi: records(item.dokumentasi).map(withDisplayUrl),
     dokumen_pendukung: records(item.dokumen_pendukung).map(withDisplayUrl),
-    // Lawet Hub tidak punya flag visibilitas jurnal; pilihan Privat/Publik di
-    // panel disimpan per dokumen pendukung (`is_public`).
-    is_published: records(item.dokumen_pendukung).length > 0
-      ? records(item.dokumen_pendukung).some((d) => d.is_public !== false)
-      : true,
+    // Visibilitas jurnal: periksa field is_published langsung, custom_fields (akses/is_published),
+    // atau fallback ke dokumen pendukung.
+    is_published: typeof item.is_published === 'boolean'
+      ? item.is_published
+      : (() => {
+          const isPubField = customFields.find((f) => f.label === 'is_published' || f.label === 'akses')
+          if (isPubField) {
+            return isPubField.value === 'true' || isPubField.value === 'publik'
+          }
+          return records(item.dokumen_pendukung).length > 0
+            ? records(item.dokumen_pendukung).some((d) => d.is_public !== false)
+            : true
+        })(),
     pihak_terkait: records(item.pihak_terkait),
     tags: Array.isArray(item.tags) ? item.tags.filter((t): t is string => typeof t === 'string') : [],
     deskripsi: readString(item.ringkasan)

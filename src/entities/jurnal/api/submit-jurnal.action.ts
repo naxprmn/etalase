@@ -56,7 +56,13 @@ export async function submitJurnalAction(payload: JurnalSubmissionPayload) {
     const validatedData = jurnalSubmissionSchema.parse(payload)
     const isUpdate = !!validatedData.id
 
-    const body = {
+    const customFields = [
+      ...(validatedData.custom_fields || []).filter(f => f.label !== 'is_published' && f.label !== 'akses'),
+      { label: 'is_published', value: validatedData.is_published ? 'true' : 'false' },
+      { label: 'akses', value: validatedData.is_published ? 'publik' : 'privat' },
+    ]
+
+    const body: Record<string, any> = {
       judul: validatedData.judul,
       ringkasan: validatedData.ringkasan || null,
       tanggal_kegiatan: validatedData.tanggal_kegiatan,
@@ -65,8 +71,12 @@ export async function submitJurnalAction(payload: JurnalSubmissionPayload) {
       dokumentasi: validatedData.dokumentasi.map(d => ({ ...d, url: toMediaObjectName(d.url) })),
       dokumen_pendukung: validatedData.dokumen_pendukung.map(d => ({ ...d, url: toMediaObjectName(d.url) })),
       pihak_terkait: validatedData.pihak_terkait,
-      custom_fields: validatedData.custom_fields,
+      custom_fields: customFields,
       tags: validatedData.tags,
+    }
+
+    if (validatedData.status) {
+      body.status = validatedData.status
     }
 
     const saved = isUpdate

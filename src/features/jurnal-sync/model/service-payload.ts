@@ -24,6 +24,7 @@ export const jurnalPayloadSchema = z.object({
   tags: z.array(z.string().max(100)).max(100).nullable().optional(),
   redaksi: z.string().max(500).nullable().optional(),
   divisi: z.string().max(200).nullable().optional(),
+  is_published: z.boolean().optional(),
 }).strict()
 
 export const jurnalPatchSchema = jurnalPayloadSchema
