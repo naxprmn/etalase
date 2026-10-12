@@ -31,7 +31,7 @@ Alias TypeScript `@/*` menunjuk ke `src/*`. Urutan layer adalah `app â†’ views â
 
 ### Arsip publik
 
-Halaman `/` menggunakan `LandingView`, yang membaca endpoint publik. Route handler publik hanya mengembalikan jurnal yang layak tampil, menyaring lampiran berdasarkan `is_public`, dan mengubah foto gambar pertama menjadi `thumbnail_url`.
+Halaman `/` menggunakan `LandingView`, yang membaca endpoint publik. Route handler publik hanya mengembalikan jurnal yang layak tampil, menyaring lampiran berdasarkan `is_public`, dan mengubah foto gambar pertama menjadi `thumbnail_url`. Dokumen tambahan (`dokumen_pendukung`) pada tampilan eksternal publik diproteksi sehingga tidak dapat diunduh oleh pihak luar (`isInternal={false}`), sedangkan pengunduhan lampiran penuh hanya diizinkan pada tampilan panel internal (`isInternal={true}`) sesuai [ADR-0009](../adr/0009-approver-management-and-external-document-boundary.md).
 
 Endpoint publik yang tersedia:
 
@@ -50,7 +50,7 @@ Endpoint publik yang tersedia:
 
 Layout grup rute `(authoring)` dan panel memanggil `getMeAction`. Sesuai [ADR-0008](../adr/0008-alas-access-gate-and-dynamic-kategori-sync.md), proses login (`loginAction`) dan verifikasi sesi (`getMeAction`) menegakkan pengecekan hak akses ALAS (`has_alas_access: true`, `feature_access.jurnal_alas: true`, atau `is_superadmin: true`). Pengguna Lawet Hub tanpa hak akses ALAS ditolak pada saat login dan tidak dapat memegang sesi aktif. Token sesi Lawet Hub disimpan sebagai cookie HTTP-only bernama `lawet_token`. Pengunjung tanpa sesi dialihkan ke `/login`; halaman `/approval` dijaga pada server berdasarkan capability `can_approve`, dengan fallback kompatibilitas untuk peran `level >= 2`.
 
-ALAS menampilkan draf dan jurnal terbit milik pengguna, antrean persetujuan, serta jurnal terbit bawahan dalam cakupan divisi approver. Alur authoring dan tindakan persetujuan (approve/reject) memanggil REST API terpusat Lawet Hub secara langsung (ADR-0005), dan persetujuan yang disetujui memicu pengiriman proyeksi publik ke ALAS melalui Direct Service API. Keputusan arsitektur ini tercatat di [ADR-0005](../adr/0005-centralized-lawet-hub-approval-workflow.md) dan [ADR-0008](../adr/0008-alas-access-gate-and-dynamic-kategori-sync.md).
+ALAS menampilkan draf dan jurnal terbit milik pengguna, antrean persetujuan, serta jurnal terbit bawahan dalam cakupan divisi approver. Alur authoring dan tindakan persetujuan (approve/reject) memanggil REST API terpusat Lawet Hub secara langsung (ADR-0005). Sesuai [ADR-0009](../adr/0009-approver-management-and-external-document-boundary.md), pengguna dengan peran approver/Kasubag memiliki wewenang untuk mengedit, menghapus, serta mengubah status workflow jurnal di Kelola Jurnal dan antarmuka persetujuan (dengan panel review sticky), dan persetujuan yang disetujui memicu pengiriman proyeksi publik ke ALAS melalui Direct Service API. Keputusan arsitektur ini tercatat di [ADR-0005](../adr/0005-centralized-lawet-hub-approval-workflow.md), [ADR-0008](../adr/0008-alas-access-gate-and-dynamic-kategori-sync.md), dan [ADR-0009](../adr/0009-approver-management-and-external-document-boundary.md).
 
 ### Service API
 

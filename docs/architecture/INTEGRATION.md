@@ -274,5 +274,6 @@ Perubahan migrasi outbox juga harus menjalankan `backend/tests/test_alas_outbox_
 - [ADR-0001 — Direct Service delivery guarantees](docs/adr/0001-direct-service-delivery-guarantees.md)
 - [ADR-0002 — Dashboard JWT read boundary](docs/adr/0002-dashboard-jwt-read-boundary.md)
 - [ADR-0003 — FSD App Router boundaries](docs/adr/0003-fsd-app-router-boundaries.md)
+- [ADR-0009 — Wewenang Pengelolaan Approver dan Batasan Unduh Dokumen Eksternal](docs/adr/0009-approver-management-and-external-document-boundary.md)
 
 ADR yang sudah diterima tidak diedit. Keputusan struktural baru harus ditulis sebagai ADR baru.
