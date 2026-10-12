@@ -9,8 +9,8 @@
  */
 export function determineJurnalVisibility(params: {
   is_published?: boolean | null
-  custom_fields?: any[] | null
-  dokumen_pendukung?: any[] | null
+  custom_fields?: unknown
+  dokumen_pendukung?: unknown
   existing_is_published?: boolean | null
 }): boolean {
   // 1. Cek nilai explicit boolean is_published
@@ -57,8 +57,8 @@ export function determineJurnalVisibility(params: {
  */
 export function isJurnalExplicitlyPrivate(record: {
   is_published?: boolean | null
-  custom_fields?: any[] | null
-  dokumen_pendukung?: any[] | null
+  custom_fields?: unknown
+  dokumen_pendukung?: unknown
 }): boolean {
   if (record.is_published === false) return true
 
