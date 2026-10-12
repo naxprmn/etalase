@@ -64,7 +64,7 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col md:flex-row gap-8 items-start">
 
         
 
@@ -157,13 +157,13 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
 
 
-        {/* Right Column: Details Preview */}
+        {/* Right Column: Details Preview (Sticky) */}
 
-        <div className={`flex-1 min-w-0 flex-col ${!selectedItem ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 min-w-0 flex-col ${!selectedItem ? 'hidden md:flex' : 'flex'} md:sticky md:top-6 self-start`}>
 
           {selectedItem ? (
 
-          <div className="rounded-[16px] border border-[#D9E2EC] bg-white flex flex-col overflow-hidden">
+          <div className="rounded-[16px] border border-[#D9E2EC] bg-white flex flex-col overflow-hidden shadow-sm max-h-[calc(100vh-3rem)]">
 
             <div className="bg-[#0F3963] px-8 pt-6 pb-6 flex flex-col relative text-white rounded-t-[16px]">
               <button onClick={() => setSelectedQueue(null)} className="md:hidden flex items-center gap-2 text-white/80 hover:text-white mb-4 text-sm font-medium w-fit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg> Kembali</button>
@@ -210,7 +210,7 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
             </div>
 
-              <div className="p-8 pb-6 border-b border-[#F0F4F8] flex flex-col gap-6 text-[12px] text-[#142B42] overflow-y-auto max-h-[500px]">
+              <div className="p-8 pb-6 border-b border-[#F0F4F8] flex flex-col gap-6 text-[12px] text-[#142B42] overflow-y-auto max-h-[calc(100vh-280px)]">
 
                 {/* Ringkasan Jurnal */}
 
@@ -414,7 +414,7 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
                   </button>
 
-                  {workspace?.viewerIsSuperadmin && (
+                  {(workspace?.viewerIsSuperadmin || workspace?.canReview) && (
                   <button
 
                     onClick={() => router.push(`?tab=edit&editId=${selectedItem.id}`)}
