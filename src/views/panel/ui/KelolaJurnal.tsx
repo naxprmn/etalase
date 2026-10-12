@@ -58,7 +58,11 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
   const rejected = allItems.filter(i => i.status === 'rejected').length;
   const pending = allItems.filter(i => i.status === 'publish_pending').length;
   const viewer = workspace
-    ? { name: workspace.viewerName, role: { is_superadmin: workspace.viewerIsSuperadmin } }
+    ? {
+        name: workspace.viewerName,
+        role: { is_superadmin: workspace.viewerIsSuperadmin, can_approve: workspace.canReview },
+        can_approve: workspace.canReview,
+      }
     : null;
 
   const availableYears = useMemo(() => {

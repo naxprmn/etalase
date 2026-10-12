@@ -33,7 +33,8 @@ export function isInProcess(status: string | undefined): boolean {
 
 interface ActorLike {
   name?: string
-  role?: { is_superadmin?: boolean } | null
+  role?: { is_superadmin?: boolean; can_approve?: boolean } | null
+  can_approve?: boolean
 }
 
 interface JurnalLike {
@@ -43,18 +44,18 @@ interface JurnalLike {
 }
 
 /**
- * Lawet Hub hanya mengizinkan edit/hapus oleh pemilik atau superadmin, dan
- * pemilik tidak bisa mengedit jurnal yang sudah terbit.
+ * Lawet Hub mengizinkan edit/hapus oleh pemilik, approver, atau superadmin.
+ * Pemilik staf biasa tidak bisa mengedit jurnal yang sudah terbit.
  */
 export function canEditJurnal(user: ActorLike | null | undefined, item: JurnalLike, userId?: string): boolean {
   if (!user) return false
-  if (user.role?.is_superadmin) return true
+  if (user.role?.is_superadmin || user.role?.can_approve || user.can_approve) return true
   return isOwner(user, item, userId) && item.status !== 'published' && item.status !== 'publish_pending'
 }
 
 export function canDeleteJurnal(user: ActorLike | null | undefined, item: JurnalLike, userId?: string): boolean {
   if (!user) return false
-  return Boolean(user.role?.is_superadmin) || isOwner(user, item, userId)
+  return Boolean(user.role?.is_superadmin) || Boolean(user.role?.can_approve) || Boolean(user.can_approve) || isOwner(user, item, userId)
 }
 
 function isOwner(user: ActorLike, item: JurnalLike, userId?: string): boolean {
