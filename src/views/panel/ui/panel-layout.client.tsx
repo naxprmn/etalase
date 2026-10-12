@@ -75,6 +75,7 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
         setKategori(item.kategori || 'Penanganan Pelanggaran');
         setRingkasan(item.deskripsi || '');
         setIsPrivat(item.is_published === false);
+        setStatusEdit(item.status === 'published' || item.status === 'rejected' ? item.status : 'draft');
         
         if (item.pihak_terkait && item.pihak_terkait.length > 0) {
           setPihakTerkaitInput(item.pihak_terkait.map((p: any) => p.nama).join(', '));
@@ -109,7 +110,8 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
         }
       }
     } else if (activeMenu === 'tambah') {
-      setIsPrivat(true);
+      setIsPrivat(false);
+      setStatusEdit('draft');
       setJudul('');
       setTanggalKegiatan('');
       setKategori('Penanganan Pelanggaran');
@@ -137,7 +139,8 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
     return days;
   };
 
-  const [isPrivat, setIsPrivat] = React.useState(true)
+  const [isPrivat, setIsPrivat] = React.useState(false)
+  const [statusEdit, setStatusEdit] = React.useState<'draft' | 'published' | 'rejected'>('draft')
   const [links, setLinks] = React.useState<string[]>([])
   const [currentLink, setCurrentLink] = React.useState('')
 
@@ -161,6 +164,7 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
         tanggal_kegiatan: tanggalKegiatan,
         kategori,
         is_published: !isPrivat,
+        status: activeMenu === 'edit' ? statusEdit : undefined,
         dokumentasi: fotos.map(f => ({ url: f, type: 'image' as const })),
         dokumen_pendukung: docs.map(d => ({ nama: d.nama, url: d.url, tipe: 'pdf' as const, is_public: !isPrivat })),
         pihak_terkait: pihakTerkaitInput ? pihakTerkaitInput.split(',').map(p => p.trim()).filter(Boolean).slice(0, 2).map(nama => ({ nama })) : [],
@@ -874,6 +878,109 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
                   *Sistem akan otomatis mengkategorikan statistik berdasarkan kata kunci (contoh: &quot;Dinas&quot; masuk ke Pemerintah Daerah).
                 </p>
               </div>
+
+              {/* Akses Visibilitas Jurnal (Publik vs Privat) */}
+              <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[15px] p-6 mb-2">
+                <label className="block text-[#142B42] text-[13px] font-bold mb-3 uppercase tracking-wide">
+                  Akses Visibilitas Jurnal <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div 
+                    onClick={() => setIsPrivat(false)}
+                    className={`cursor-pointer rounded-[12px] p-4 border-2 transition-all flex items-start gap-3.5 ${
+                      !isPrivat ? 'border-[#22C55E] bg-[#22C55E]/5 shadow-sm' : 'border-[#E2E8F0] bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center shrink-0 ${
+                      !isPrivat ? 'border-[#22C55E] bg-[#22C55E]' : 'border-gray-400'
+                    }`}>
+                      {!isPrivat && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#142B42] font-bold text-[14px]">Publik</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#22C55E]/15 text-[#16A34A]">Terbuka</span>
+                      </div>
+                      <p className="text-[12px] text-[#64748B] mt-1 leading-relaxed">
+                        Jurnal tampil di etalase beranda publik dan dapat dilihat secara terbuka.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div 
+                    onClick={() => setIsPrivat(true)}
+                    className={`cursor-pointer rounded-[12px] p-4 border-2 transition-all flex items-start gap-3.5 ${
+                      isPrivat ? 'border-[#0F3E79] bg-[#0F3E79]/5 shadow-sm' : 'border-[#E2E8F0] bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center shrink-0 ${
+                      isPrivat ? 'border-[#0F3E79] bg-[#0F3E79]' : 'border-gray-400'
+                    }`}>
+                      {isPrivat && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#142B42] font-bold text-[14px]">Privat / Internal</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0F3E79]/15 text-[#0F3E79]">Internal</span>
+                      </div>
+                      <p className="text-[12px] text-[#64748B] mt-1 leading-relaxed">
+                        Hanya tersimpan di panel internal pengawas, tidak ditampilkan di etalase publik.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Ubah Status (Tampil saat Edit untuk Approver / Pengelola) */}
+              {activeMenu === 'edit' && (
+                <div className="bg-[#FFF8EE] border border-[#FDE68A] rounded-[15px] p-6 mb-2">
+                  <label className="block text-[#142B42] text-[13px] font-bold mb-2 uppercase tracking-wide flex items-center gap-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F7921C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Ubah Status Jurnal
+                  </label>
+                  <p className="text-[12px] text-[#7B8EA0] mb-4">
+                    Ubah status tahapan jurnal ini sesuai tinjauan atau persetujuan.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setStatusEdit('draft')}
+                      className={`px-4 py-3 rounded-[10px] border-2 text-[13px] font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                        statusEdit === 'draft'
+                          ? 'border-[#F7921C] bg-[#FFF3E0] text-[#D97706] shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>Menunggu Review</span>
+                      <span className="text-[10px] font-normal text-gray-500">Antrean Review</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusEdit('published')}
+                      className={`px-4 py-3 rounded-[10px] border-2 text-[13px] font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                        statusEdit === 'published'
+                          ? 'border-[#22C55E] bg-[#E8F8EE] text-[#15803D] shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>Terbit</span>
+                      <span className="text-[10px] font-normal text-gray-500">Disetujui / Terbit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusEdit('rejected')}
+                      className={`px-4 py-3 rounded-[10px] border-2 text-[13px] font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                        statusEdit === 'rejected'
+                          ? 'border-[#EF4444] bg-[#FEECEC] text-[#B91C1C] shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>Dikembalikan</span>
+                      <span className="text-[10px] font-normal text-gray-500">Perlu Revisi</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Submit Action */}
               <div className="mt-3 pt-10 border-t border-[#BAC4DF] flex justify-end">
