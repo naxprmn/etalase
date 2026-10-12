@@ -609,6 +609,7 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
         isOpen={!!detailPopup}
         onClose={() => setDetailPopup(null)}
         isLoggedIn={true}
+        isInternal={true}
         initialData={detailItem ? { ...detailItem, ringkasan: detailItem.deskripsi } : null}
       />
     </div>

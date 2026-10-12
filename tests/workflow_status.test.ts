@@ -8,6 +8,7 @@ import {
 
 const staff = { name: 'Staf Uji', role: { is_superadmin: false } }
 const superadmin = { name: 'Superadmin', role: { is_superadmin: true } }
+const approver = { name: 'Kasubag', role: { can_approve: true, is_superadmin: false } }
 
 describe('workflow status labels (Lawet Hub semantics)', () => {
   it('maps Lawet statuses to the narrative shown in the panel', () => {
@@ -34,12 +35,15 @@ describe('edit/delete permissions mirror Lawet Hub rules', () => {
     expect(canEditJurnal(staff, { status: 'draft', owner_id: 'u2' }, 'u1')).toBe(false)
   })
 
-  it('lets superadmin edit and delete anything', () => {
+  it('lets superadmin and approver edit and delete anything', () => {
     expect(canEditJurnal(superadmin, { status: 'published', owner_id: 'u2' }, 'u1')).toBe(true)
     expect(canDeleteJurnal(superadmin, { status: 'published', owner_id: 'u2' }, 'u1')).toBe(true)
+
+    expect(canEditJurnal(approver, { status: 'published', owner_id: 'u2' }, 'u1')).toBe(true)
+    expect(canDeleteJurnal(approver, { status: 'published', owner_id: 'u2' }, 'u1')).toBe(true)
   })
 
-  it('lets only the owner delete as non-superadmin', () => {
+  it('lets only the owner delete as non-superadmin non-approver', () => {
     expect(canDeleteJurnal(staff, { owner_id: 'u1' }, 'u1')).toBe(true)
     expect(canDeleteJurnal(staff, { owner_id: 'u2' }, 'u1')).toBe(false)
     expect(canDeleteJurnal(null, { owner_id: 'u1' }, 'u1')).toBe(false)

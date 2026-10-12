@@ -13,6 +13,7 @@ interface JurnalDetailModalProps {
   isOpen: boolean
   onClose: () => void
   isLoggedIn?: boolean
+  isInternal?: boolean
   /** Data jurnal yang sudah dimiliki pemanggil (mis. panel untuk jurnal yang belum terbit). */
   initialData?: Record<string, any> | null
 }
@@ -22,6 +23,7 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
   isOpen,
   onClose,
   isLoggedIn = false,
+  isInternal = false,
   initialData = null,
 }) => {
   const [zoomedImage, setZoomedImage] = React.useState<string | null>(null);
@@ -243,7 +245,7 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
             )}
 
 
-            {/* Dokumen Pendukung (Hanya tampil jika login) */}
+            {/* Dokumen Pendukung */}
 
             {isLoggedIn && item.dokumen_pendukung && item.dokumen_pendukung.length > 0 && (
 
@@ -260,7 +262,30 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
                 <div className="flex flex-col gap-3">
 
                   {item.dokumen_pendukung.map((doc: any, i: number) => {
-                    const hasUrl = !!doc.url;
+                    const hasUrl = !!doc.url && isInternal;
+                    if (!isInternal) {
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] opacity-90 select-none"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm text-slate-400">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[#334155] font-semibold text-[14px]">{doc.nama || doc.name || `Dokumen ${i+1}`}</span>
+                              <span className="text-[#94A3B8] text-[12px]">Dokumen Lampiran</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg text-xs font-semibold">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span>Khusus Internal</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                     <a key={i} href={doc.url || undefined} target={hasUrl ? "_blank" : undefined} rel={hasUrl ? "noreferrer" : undefined} className={`flex items-center justify-between p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] transition-colors group ${hasUrl ? 'hover:bg-[#F1F5F9] cursor-pointer' : 'opacity-70 cursor-not-allowed'}`} onClick={(e) => { if (!hasUrl) { e.preventDefault();  } }}>
 

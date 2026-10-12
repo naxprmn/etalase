@@ -86,6 +86,7 @@ Thumbs.db:encryptable
 $RECYCLE.BIN/
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 *.swn

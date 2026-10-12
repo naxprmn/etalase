@@ -523,6 +523,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
           isOpen={!!selectedJurnalId}
           onClose={() => setSelectedJurnalId(null)}
           isLoggedIn={!!user}
+          isInternal={false}
         />
       </div>
 
