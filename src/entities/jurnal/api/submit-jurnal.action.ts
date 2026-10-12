@@ -5,6 +5,9 @@ import { revalidatePath } from 'next/cache'
 import { getMeAction } from '@/entities/lawet-user'
 import { JurnalSubmissionPayload, jurnalSubmissionSchema } from '../model/submission-schema'
 import { toMediaObjectName } from '../lib/media-url'
+import { db } from '@/shared/lib/db'
+import { jurnal } from '../../../../drizzle/schema'
+import { eq, or } from 'drizzle-orm'
 
 /**
  * Pengajuan / edit jurnal langsung ke Lawet Hub (ADR-0005).
@@ -105,7 +108,27 @@ export async function submitJurnalAction(payload: JurnalSubmissionPayload) {
       }
     }
 
-    revalidatePath('/panel');
+    // Sinkronisasi lokal langsung ke database ALAS jika jurnal sudah ada di read model,
+    // agar panel dan beranda tidak menampilkan data usang sebelum event Celery tuntas.
+    try {
+      const targetId = sourceId || validatedData.id
+      if (targetId) {
+        await db.update(jurnal).set({
+          judul: validatedData.judul,
+          ringkasan: validatedData.ringkasan || null,
+          tanggal_kegiatan: validatedData.tanggal_kegiatan,
+          kategori: validatedData.kategori,
+          is_published: validatedData.is_published,
+          custom_fields: customFields,
+          updated_at: new Date(),
+        }).where(or(eq(jurnal.source_id, targetId), eq(jurnal.id, targetId)))
+      }
+    } catch {
+      // Best-effort local update
+    }
+
+    revalidatePath('/')
+    revalidatePath('/panel')
 
     return { success: true, data: { source_id: sourceId, status }, warning }
   } catch (error: any) {

@@ -12,7 +12,9 @@ export async function getJurnalCalendar(month: string) {
   .from(jurnal)
   .where(
     and(
-      eq(jurnal.is_published, true), eq(jurnal.workflow_status, 'published'),
+      eq(jurnal.is_published, true),
+      eq(jurnal.workflow_status, 'published'),
+      sql`NOT (${jurnal.custom_fields}::text ILIKE '%"value": "privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value": "false"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"false"%')`,
       sql`TO_CHAR(${jurnal.tanggal_kegiatan}, 'YYYY-MM') = ${month}`
     )
   )

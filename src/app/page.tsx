@@ -3,7 +3,7 @@ import LandingView from '@/views/landing'
 import { getMeAction } from '@/entities/lawet-user'
 import { db } from '@/shared/lib/db'
 import { jurnal } from '../../drizzle/schema'
-import { and, eq, desc } from 'drizzle-orm'
+import { and, eq, desc, sql } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +16,14 @@ export default async function Home() {
     subtitle: 'Arsip Jurnal Bawaslu Kebumen'
   }
 
-  const publishedJurnals = await db.select().from(jurnal).where(and(eq(jurnal.workflow_status, 'published'), eq(jurnal.is_published, true))).orderBy(desc(jurnal.created_at)).limit(10);
+  const publishedJurnals = await db.select().from(jurnal)
+    .where(and(
+      eq(jurnal.workflow_status, 'published'),
+      eq(jurnal.is_published, true),
+      sql`NOT (${jurnal.custom_fields}::text ILIKE '%"value": "privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value": "false"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"false"%')`
+    ))
+    .orderBy(desc(jurnal.created_at))
+    .limit(10);
   
   const recentPhotos = [];
   for (const j of publishedJurnals) {

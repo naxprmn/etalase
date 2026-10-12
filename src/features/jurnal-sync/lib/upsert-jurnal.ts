@@ -2,6 +2,7 @@ import { db } from '@/shared/lib/db'
 import { jurnal } from '../../../../drizzle/schema'
 import { eq } from 'drizzle-orm'
 import type { DatabaseExecutor } from '@/shared/lib/db'
+import { determineJurnalVisibility } from '@/entities/jurnal/lib/visibility'
 
 interface IncomingDokumen {
   nama: string
@@ -31,7 +32,12 @@ interface JurnalPayload {
 export async function upsertJurnal(payload: JurnalPayload, database: DatabaseExecutor = db) {
   // 1. Fetch existing item by source_id
   const existingItems = await database
-    .select({ dokumen_pendukung: jurnal.dokumen_pendukung })
+    .select({
+      id: jurnal.id,
+      is_published: jurnal.is_published,
+      dokumen_pendukung: jurnal.dokumen_pendukung,
+      custom_fields: jurnal.custom_fields,
+    })
     .from(jurnal)
     .where(eq(jurnal.source_id, payload.source_id))
     .limit(1)
@@ -71,19 +77,13 @@ export async function upsertJurnal(payload: JurnalPayload, database: DatabaseExe
     }))
   }
 
-  // Tentukan visibilitas jurnal (publik vs privat)
-  let isPublished = true
-  if (typeof payload.is_published === 'boolean') {
-    isPublished = payload.is_published
-  } else {
-    const customFields = Array.isArray(payload.custom_fields) ? payload.custom_fields : []
-    const isPubField = customFields.find((f: any) => f && (f.label === 'is_published' || f.label === 'akses'))
-    if (isPubField) {
-      isPublished = isPubField.value === 'true' || isPubField.value === 'publik'
-    } else if (incomingDocs.length > 0) {
-      isPublished = incomingDocs.some(d => d.is_public !== false)
-    }
-  }
+  // Tentukan visibilitas jurnal (publik vs privat) secara deterministik & konsisten
+  const isPublished = determineJurnalVisibility({
+    is_published: payload.is_published,
+    custom_fields: payload.custom_fields,
+    dokumen_pendukung: mergedDocs,
+    existing_is_published: existing?.is_published
+  })
 
   const valuesToUpsert = {
     source_id: payload.source_id,

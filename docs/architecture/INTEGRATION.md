@@ -154,6 +154,15 @@ Payload create jurnal bersifat strict dan divalidasi Zod:
 
 `dokumen_pendukung` dari full sync hanya menerima `nama`, `url`, dan `tipe`; ALAS mempertahankan nilai `is_public` yang sudah ditetapkan untuk URL yang sama. Endpoint khusus `/dokumen` menerima `is_public` untuk mengubah visibility.
 
+### Aturan Visibilitas Publik Jurnal
+
+Sesuai ADR-0005, ADR-0007, dan implementasi ALAS read model, status `is_published` (visibilitas di etalase publik) diturunkan secara deterministik (`determineJurnalVisibility`):
+1. **Field Eksplisit**: Nilai boolean `is_published` langsung menentukan visibilitas.
+2. **Metadata `custom_fields`**: Entri dengan label `is_published` atau `akses` bernilai `privat`/`false` menyebabkan `is_published = false`.
+3. **Lampiran Dokumen**: Jika jurnal memiliki `dokumen_pendukung` dan seluruh lampirannya berstatus privat (`is_public: false`), maka jurnal otomatis berstatus privat (`is_published = false`).
+4. **Endpoint `/dokumen` & `PATCH`**: Pembaruan dokumen atau parsial otomatis mengevaluasi ulang `is_published` sehingga jurnal privat tidak pernah bocor ke antarmuka publik.
+
+
 ### Pimpinan
 
 | Method | Path | Kontrak |

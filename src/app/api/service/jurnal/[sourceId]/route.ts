@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authenticateService, authenticateServiceWrite, getServiceEventId } from '@/features/service-auth/lib/verify-token'
 import { processServiceEvent } from '@/features/service-events/lib/process-service-event'
 import { jurnalPatchSchema } from '@/features/jurnal-sync/model/service-payload'
+import { determineJurnalVisibility } from '@/entities/jurnal/lib/visibility'
 import { db } from '@/shared/lib/db'
 import { jurnal } from '../../../../../../drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -71,14 +72,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { source
       sourceId,
       operation: 'patch',
     }, async (transaction) => {
-      if (payload.dokumen_pendukung !== undefined) {
-        const [existing] = await transaction
-          .select({ id: jurnal.id, dokumen_pendukung: jurnal.dokumen_pendukung })
-          .from(jurnal)
-          .where(eq(jurnal.source_id, sourceId))
-          .limit(1)
-        if (!existing) return null
+      const [existing] = await transaction
+        .select({
+          id: jurnal.id,
+          is_published: jurnal.is_published,
+          dokumen_pendukung: jurnal.dokumen_pendukung,
+          custom_fields: jurnal.custom_fields,
+        })
+        .from(jurnal)
+        .where(eq(jurnal.source_id, sourceId))
+        .limit(1)
+      if (!existing) return null
 
+      if (payload.dokumen_pendukung !== undefined) {
         const incomingDocs = payload.dokumen_pendukung || []
         const existingDocs = Array.isArray(existing.dokumen_pendukung) ? existing.dokumen_pendukung : []
         const existingIsPublicMap = new Map<string, boolean>()
@@ -91,17 +97,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { source
           tipe: doc.tipe,
           is_public: existingIsPublicMap.has(doc.url) ? existingIsPublicMap.get(doc.url) : true,
         }))
+      }
 
-        const [updated] = await transaction.update(jurnal)
-          .set(updateFields)
-          .where(eq(jurnal.id, existing.id))
-          .returning({ id: jurnal.id })
-        return updated || null
+      if (updateFields.is_published === undefined) {
+        updateFields.is_published = determineJurnalVisibility({
+          is_published: undefined,
+          custom_fields: updateFields.custom_fields || existing.custom_fields,
+          dokumen_pendukung: updateFields.dokumen_pendukung || existing.dokumen_pendukung,
+          existing_is_published: existing.is_published,
+        })
       }
 
       const [updated] = await transaction.update(jurnal)
         .set(updateFields)
-        .where(eq(jurnal.source_id, sourceId))
+        .where(eq(jurnal.id, existing.id))
         .returning({ id: jurnal.id })
       return updated || null
     })

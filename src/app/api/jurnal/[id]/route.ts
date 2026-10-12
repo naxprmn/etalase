@@ -1,26 +1,21 @@
 import { NextResponse, NextRequest } from 'next/server'
-
 import { getJurnalDetail } from '@/entities/jurnal/api/get-jurnal-detail'
-
+import { isJurnalExplicitlyPrivate } from '@/entities/jurnal/lib/visibility'
 import { getMeAction } from '@/entities/lawet-user'
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
-
   try {
-
     const user = await getMeAction()
-
     const id = params.id
-
     const item = await getJurnalDetail(id, false)
     
-    if (item && (!item.is_published || item.workflow_status !== 'published')) {
+    if (item && (!item.is_published || item.workflow_status !== 'published' || isJurnalExplicitlyPrivate(item))) {
       if (!user) {
         return NextResponse.json({ status: "error", message: "not found" }, { status: 404 })
       }
-      // Strict check: Only Kasubag or the owner can view
-      const isOwner = Boolean(user.name && user.name === item.redaksi);
-      const isKasubag = Boolean(user.role?.name?.toLowerCase().includes('kasubag') || user.role?.can_approve);
+      // Strict check: Only Kasubag, Approver, Superadmin, or the owner can view
+      const isOwner = Boolean(user.name && user.name === item.redaksi)
+      const isKasubag = Boolean(user.role?.name?.toLowerCase().includes('kasubag') || user.role?.can_approve || user.role?.is_superadmin)
       if (!isOwner && !isKasubag) {
         return NextResponse.json({ status: "error", message: "not found" }, { status: 404 })
       }

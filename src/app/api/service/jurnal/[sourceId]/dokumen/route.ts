@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authenticateServiceWrite, getServiceEventId } from '@/features/service-auth/lib/verify-token'
 import { processServiceEvent } from '@/features/service-events/lib/process-service-event'
 import { dokumenPatchSchema } from '@/features/jurnal-sync/model/service-payload'
+import { determineJurnalVisibility } from '@/entities/jurnal/lib/visibility'
 import { jurnal } from '../../../../../../../drizzle/schema'
 import { eq } from 'drizzle-orm'
 
@@ -36,9 +37,33 @@ export async function PATCH(request: NextRequest, { params }: { params: { source
       sourceId,
       operation: 'patch_dokumen',
     }, async (transaction) => {
-      const [updated] = await transaction.update(jurnal)
-        .set({ dokumen_pendukung: docs, synced_at: new Date(), updated_at: new Date() })
+      const [existing] = await transaction
+        .select({
+          id: jurnal.id,
+          is_published: jurnal.is_published,
+          custom_fields: jurnal.custom_fields
+        })
+        .from(jurnal)
         .where(eq(jurnal.source_id, sourceId))
+        .limit(1)
+
+      if (!existing) return null
+
+      const isPublished = determineJurnalVisibility({
+        is_published: undefined,
+        custom_fields: existing.custom_fields,
+        dokumen_pendukung: docs,
+        existing_is_published: existing.is_published
+      })
+
+      const [updated] = await transaction.update(jurnal)
+        .set({
+          dokumen_pendukung: docs,
+          is_published: isPublished,
+          synced_at: new Date(),
+          updated_at: new Date()
+        })
+        .where(eq(jurnal.id, existing.id))
         .returning({ id: jurnal.id })
       return updated || null
     })

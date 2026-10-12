@@ -19,7 +19,11 @@ export function encodeJurnalCursor(item: CursorItem): string {
 
 
 export async function getJurnalList({ q = '', kategori = '', cursor = '', limit = 20, date = '', tahun = '' }: GetJurnalListParams) {
-  let conditions = [eq(jurnal.is_published, true), eq(jurnal.workflow_status, 'published')]
+  let conditions = [
+    eq(jurnal.is_published, true),
+    eq(jurnal.workflow_status, 'published'),
+    sql`NOT (${jurnal.custom_fields}::text ILIKE '%"value": "privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value": "false"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"false"%')`
+  ]
 
   if (date) {
     conditions.push(eq(jurnal.tanggal_kegiatan, date))
