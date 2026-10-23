@@ -226,9 +226,9 @@ Endpoint visibility yang dipakai ALAS:
 | `GET` | `/api/v1/jurnal-alas/approval-queue/:id` | Detail item approval. |
 | `GET` | `/api/v1/jurnal-alas/media/:prefix/:path` | Media terlindungi melalui proxy ALAS. |
 
-Proxy media ALAS hanya menerima prefix `jurnal-foto` atau `jurnal-dokumen`, menolak segmen path berbahaya, menerapkan `LAWET_REQUEST_TIMEOUT_MS`, dan selalu mengirim `Cache-Control: private, no-store`.
+Proxy media ALAS hanya menerima prefix `jurnal-foto`, `jurnal-dokumen`, atau `alas_media`, menolak segmen path berbahaya, menerapkan `LAWET_REQUEST_TIMEOUT_MS`, dan selalu mengirim `Cache-Control: private, no-store`. Thumbnail pada antarmuka authoring menggunakan helper `toMediaDisplayUrl` untuk memastikan pratinjau foto dan unduhan dokumen terlayani dengan benar.
 
-Sesuai ADR-0005, panel ALAS (`/panel`) memanggil Lawet Hub langsung dengan JWT pengguna untuk submit (`POST /api/v1/jurnal-alas/`), edit/ajukan ulang (`PATCH /{id}`), hapus (`DELETE /{id}`), upload (`/upload/foto`, `/upload/dokumen`), serta approve/reject. Field `url` media dikirim sebagai object_name Lawet Hub. Panel membaca daftar kerja hanya dari Lawet Hub (`/draft`, daftar terbit, `/approval-queue`); DB lokal ALAS murni read model publik yang diisi Lawet Hub lewat Service API setelah persetujuan.
+Sesuai ADR-0005, panel ALAS (`/panel`) memanggil Lawet Hub langsung dengan JWT pengguna untuk submit (`POST /api/v1/jurnal-alas/`), edit/ajukan ulang (`PATCH /{id}`), hapus (`DELETE /{id}`), upload (`/upload/foto`, `/upload/dokumen`), serta approve/reject. Seleksi status "Terbit" (`published`) dalam formulir edit dibatasi hanya untuk peran approver/Kasubag (`canApproveJurnal(user)`), sementara staf biasa hanya dapat mengirimkan status `draft`. Field `url` media dikirim sebagai object_name Lawet Hub. Panel membaca daftar kerja hanya dari Lawet Hub (`/draft`, daftar terbit, `/approval-queue`); DB lokal ALAS murni read model publik yang diisi Lawet Hub lewat Service API setelah persetujuan. Sesuai ADR-0007, lampiran internal (`is_public: false`) tidak mengubah visibilitas artikel jurnal publik menjadi privat.
 
 ## Konfigurasi
 

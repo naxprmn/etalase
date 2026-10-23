@@ -26,9 +26,14 @@ npm run arch:check
 npm run test:unit
 npm run test:integration
 npm run test:watch
+npx playwright test
 ```
 
-`boundary:test` menguji positive/negative fixture checker isolasi repository, `coverage:test` menguji unit test coverage gate, sedangkan `arch:check` memindai repository aktual lalu menjalankan dependency-cruiser. `coverage:gate` memvalidasi bahwa setiap feature baru memiliki test (TDD gate di CI). `npm test` menjalankan semua test satu kali; `test:unit` tidak memerlukan database, sedangkan `test:integration` memerlukan PostgreSQL lokal pada koneksi test default atau `TEST_DATABASE_URL`. Test berbasis Testcontainers juga memerlukan Docker aktif. Untuk validasi produksi, jalankan juga:
+`boundary:test` menguji positive/negative fixture checker isolasi repository, `coverage:test` menguji unit test coverage gate, sedangkan `arch:check` memindai repository aktual lalu menjalankan dependency-cruiser. `coverage:gate` memvalidasi bahwa setiap feature baru memiliki test (TDD gate di CI). `npm test` menjalankan semua test satu kali; `test:unit` tidak memerlukan database, sedangkan `test:integration` memerlukan PostgreSQL lokal pada koneksi test default atau `TEST_DATABASE_URL`. Test berbasis Testcontainers juga memerlukan Docker aktif.
+
+Pengujian end-to-end (E2E) dijalankan via Playwright (`tests/e2e/`), dengan konfigurasi channel browser default `process.env.PW_CHANNEL || 'chrome'` untuk kompatibilitas Windows dan Linux, serta mock auth server untuk simulasi flow input panel staf tanpa ketergantungan instans Lawet Hub eksternal.
+
+Untuk validasi produksi, jalankan juga:
 
 ```bash
 npm run build
