@@ -75,7 +75,7 @@ Catatan: `when` migrasi `0002` di journal berbeda dari yang tercatat di database
 
    Respons sehat: `{"status":"ok","service":"alas","db_connected":true}` (HTTP 200). Saat database tidak terjangkau respons HTTP 500 dengan `db_connected:false`; penyebabnya hanya ada di log `alas-app`.
 
-Stack produksi terdiri dari `alas-db` (PostgreSQL hanya pada jaringan internal), `alas-app` (Next.js pada port internal 3000/host 3001), dan `alas-nginx` (port host 2006). `ALAS_DB_PASSWORD` wajib diisi; Compose berhenti sebelum start jika nilainya tidak tersedia. Konfigurasi Nginx (`nginx/alas.conf`) secara ketat memblokir rute mock pengujian (`/api/mock/`) dengan HTTP 404 di lingkungan produksi. Workflow GitHub Actions membangun serta mendorong image GHCR ketika ada push ke `main`.
+Stack produksi terdiri dari `alas-db` (PostgreSQL hanya pada jaringan internal), `alas-app` (Next.js pada port internal 3000/host 3001), dan `alas-nginx` (port host 2006). `ALAS_DB_PASSWORD` wajib diisi; Compose berhenti sebelum start jika nilainya tidak tersedia. Konfigurasi Nginx (`nginx/alas.conf`) secara ketat memblokir rute mock pengujian (`/api/mock/`) dengan HTTP 404 di lingkungan produksi dan membatasi laju per IP dengan tiga zona ([ADR-0012](../adr/0012-nginx-rate-limit-zones-per-traffic-class.md)): API publik 100/menit (burst 20), proxy media panel 600/menit (burst 100), dan Direct Service `/api/service/` 1200/menit (burst 200). Melebihi batas dijawab HTTP 429. Setelah mengubah `nginx/alas.conf`, validasi dengan `docker run --rm --add-host alas-app:127.0.0.1 -v "$PWD/nginx/alas.conf:/etc/nginx/conf.d/default.conf:ro" nginx:1.25-alpine nginx -t` lalu `docker compose exec alas-nginx nginx -s reload`. Workflow GitHub Actions membangun serta mendorong image GHCR ketika ada push ke `main`.
 
 ### Migrasi pembersihan 0010
 
@@ -87,6 +87,7 @@ Migrasi `0010_drop_legacy_admin_and_outbox` menghapus tabel `site_settings` (pen
 | --- | --- |
 | Situs atau API publik gagal | `GET /api/health`, lalu periksa log `alas-nginx` dan `alas-app`. |
 | Health check gagal database | Periksa status `alas-db`, `DATABASE_URL`, dan kredensial PostgreSQL. |
+| Service API/foto panel 429 | Batas laju nginx terlampaui; lihat zona di `nginx/alas.conf` dan log `alas-nginx`. Outbox Lawet Hub mencoba ulang otomatis dengan backoff. |
 | Service API 401 | Periksa bearer, HMAC secret, timestamp host, path/body yang ditandatangani, dan replay window. |
 | Panel login/visibilitas gagal | Pastikan `LAWET_API_URL` dapat dijangkau dari container `alas-app`. |
 | Tautan pengajuan/approval gagal | Pastikan `LAWET_PUBLIC_URL` adalah origin HTTPS yang dapat dijangkau browser pengguna. |
