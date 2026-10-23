@@ -282,11 +282,11 @@ Perubahan migrasi outbox juga harus menjalankan `backend/tests/test_alas_outbox_
 
 ## Keputusan arsitektur
 
-- [ADR-0001 — Direct Service delivery guarantees](docs/adr/0001-direct-service-delivery-guarantees.md)
-- [ADR-0002 — Dashboard JWT read boundary](docs/adr/0002-dashboard-jwt-read-boundary.md) (token panel: ADR-0010)
-- [ADR-0003 — FSD App Router boundaries](docs/adr/0003-fsd-app-router-boundaries.md)
-- [ADR-0009 — Wewenang Pengelolaan Approver dan Batasan Unduh Dokumen Eksternal](docs/adr/0009-approver-management-and-external-document-boundary.md)
-- [ADR-0011 — Kontrak daftar Service API, panel tanpa penulisan ganda, dan retensi ledger event](docs/adr/0011-service-api-list-contract-and-ledger-retention.md)
-- [ADR-0010 — Sesi panel berscope `alas-panel`, kewenangan atas jurnal non-publik, dan pengerasan API publik](docs/adr/0010-panel-session-scope-and-public-api-hardening.md)
+- [ADR-0001 — Direct Service delivery guarantees](../adr/0001-direct-service-delivery-guarantees.md)
+- [ADR-0002 — Dashboard JWT read boundary](../adr/0002-dashboard-jwt-read-boundary.md) (token panel: ADR-0010)
+- [ADR-0003 — FSD App Router boundaries](../adr/0003-fsd-app-router-boundaries.md)
+- [ADR-0009 — Wewenang Pengelolaan Approver dan Batasan Unduh Dokumen Eksternal](../adr/0009-approver-management-and-external-document-boundary.md)
+- [ADR-0011 — Kontrak daftar Service API, panel tanpa penulisan ganda, dan retensi ledger event](../adr/0011-service-api-list-contract-and-ledger-retention.md)
+- [ADR-0010 — Sesi panel berscope `alas-panel`, kewenangan atas jurnal non-publik, dan pengerasan API publik](../adr/0010-panel-session-scope-and-public-api-hardening.md)
 
 ADR yang sudah diterima tidak diedit. Keputusan struktural baru harus ditulis sebagai ADR baru.
