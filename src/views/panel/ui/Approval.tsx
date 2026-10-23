@@ -5,6 +5,7 @@ import type { JurnalWorkspace } from '@/features/jurnal-saya/api/get-my-jurnals.
 import { useRouter } from 'next/navigation';
 
 import { setujuJurnalAction, tolakJurnalAction } from '@/features/jurnal-saya/api/approve.action';
+import { Spinner } from '@/shared/ui/spinner'
 
 
 
@@ -584,11 +585,13 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
                 disabled={isRejecting}
 
+                aria-busy={isRejecting}
+
                 className="w-[199px] h-[56px] rounded-[13px] bg-[#EFD3D0] text-[#AB0000] text-[20px] font-semibold hover:bg-[#e3c2bf] transition-colors"
 
               >
 
-                {isRejecting ? 'Loading...' : 'Kirim Penolakan'}
+                {isRejecting ? (<span className="inline-flex items-center justify-center gap-2"><Spinner size={18} /> Mengirim...</span>) : 'Kirim Penolakan'}
 
               </button>
 
@@ -679,11 +682,13 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
 
                 disabled={isRejecting}
 
+                aria-busy={isRejecting}
+
                 className="w-[199px] h-[56px] rounded-[13px] bg-[#E1F3EA] text-[#0F9347] text-[20px] font-semibold hover:bg-[#d1ebd9] transition-colors"
 
               >
 
-                {isRejecting ? 'Loading...' : 'Setujui Jurnal'}
+                {isRejecting ? (<span className="inline-flex items-center justify-center gap-2"><Spinner size={18} /> Menyetujui...</span>) : 'Setujui Jurnal'}
 
               </button>
 

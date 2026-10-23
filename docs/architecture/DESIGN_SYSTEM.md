@@ -603,6 +603,15 @@ On small screens, prioritize clarity over decorative depth.
 
 ---
 
+### Indikator transaksi
+
+Setiap aksi yang mengubah data atau memanggil Lawet Hub (masuk, ajukan/simpan jurnal, setujui, tolak, hapus, unggah foto/dokumen, keluar) menampilkan `Spinner` (`src/shared/ui/spinner.tsx`) selama permintaan berjalan:
+
+- Tombol pemicu terkunci (`disabled`) dan memakai `aria-busy="true"`; labelnya berubah menjadi bentuk berjalan ("Menyetujui...", "Menghapus...") dengan spinner di sampingnya.
+- Spinner berwarna `currentColor` sehingga mengikuti warna tombol; animasinya satu putaran lambat, bukan kedip cepat.
+- Spinner adalah `role="status"` dengan `aria-label` yang menyebut transaksinya, agar pembaca layar mengumumkannya.
+- Unggahan berkas menampilkan penanda "Mengunggah n..." di zona unggah selama antrean berjalan; keadaan dibersihkan di `finally` agar tidak menggantung saat gagal.
+
 ## 16. Accessibility
 
 - Keep normal body text at least `16px`
