@@ -38,17 +38,17 @@ Endpoint publik yang tersedia:
 | Endpoint | Fungsi |
 | --- | --- |
 | `GET /api/jurnal` | Daftar jurnal dengan pencarian, kategori, tanggal, dan cursor pagination. |
-| `GET /api/jurnal/:id` | Detail jurnal publik. |
+| `GET /api/jurnal/:id` | Detail jurnal publik. Jurnal non-publik hanya untuk superadmin, approver divisinya, dan pemilik (dibuktikan Lawet Hub); dokumen pendukung mengikuti ADR-0007. |
 | `GET /api/jurnal/calendar?month=YYYY-MM` | Tanggal yang memiliki kegiatan. |
 | `GET /api/jurnal/stats?year=YYYY` | Rekap kategori dan tahun yang tersedia. |
 | `GET /api/jurnal/kategori` | Daftar kategori jurnal dari Lawet Hub API dengan fallback database lokal ALAS. |
 | `GET /api/pimpinan?date=YYYY-MM-DD` | Pimpinan aktif untuk suatu tanggal. |
 | `GET /api/pimpinan/:id` | Detail pimpinan. |
-| `GET /api/health` | Pemeriksaan koneksi database dan uptime proses. |
+| `GET /api/health` | Pemeriksaan koneksi database (`status`, `service`, `db_connected`); versi, uptime, dan pesan galat tidak dibuka. |
 
 ### Workflow authoring dan persetujuan
 
-Layout grup rute `(authoring)` dan panel memanggil `getMeAction`. Sesuai [ADR-0008](../adr/0008-alas-access-gate-and-dynamic-kategori-sync.md), proses login (`loginAction`) dan verifikasi sesi (`getMeAction`) menegakkan pengecekan hak akses ALAS (`has_alas_access: true`, `feature_access.jurnal_alas: true`, atau `is_superadmin: true`). Pengguna Lawet Hub tanpa hak akses ALAS ditolak pada saat login dan tidak dapat memegang sesi aktif. Token sesi Lawet Hub disimpan sebagai cookie HTTP-only bernama `lawet_token`. Pengunjung tanpa sesi dialihkan ke `/login`; halaman `/approval` dijaga pada server berdasarkan capability `can_approve`, dengan fallback kompatibilitas untuk peran `level >= 2`.
+Layout grup rute `(authoring)` dan panel memanggil `getMeAction`. Sesuai [ADR-0008](../adr/0008-alas-access-gate-and-dynamic-kategori-sync.md), proses login (`loginAction`) dan verifikasi sesi (`getMeAction`) menegakkan pengecekan hak akses ALAS (`has_alas_access: true`, `feature_access.jurnal_alas: true`, atau `is_superadmin: true`). Pengguna Lawet Hub tanpa hak akses ALAS ditolak pada saat login dan tidak dapat memegang sesi aktif. Token sesi Lawet Hub disimpan sebagai cookie HTTP-only bernama `lawet_token`; login mengirim `X-Lawet-Client: alas-panel` sehingga token berscope `alas:panel` (hanya modul Jurnal ALAS, stateless) dan umur cookie mengikuti klaim `exp` token ([ADR-0010](../adr/0010-panel-session-scope-and-public-api-hardening.md)). Pengunjung tanpa sesi dialihkan ke `/login`; halaman `/approval` dijaga pada server berdasarkan capability `can_approve`, dengan fallback kompatibilitas untuk peran `level >= 2`.
 
 ALAS menampilkan draf dan jurnal terbit milik pengguna, antrean persetujuan, serta jurnal terbit bawahan dalam cakupan divisi approver. Alur authoring dan tindakan persetujuan (approve/reject) memanggil REST API terpusat Lawet Hub secara langsung (ADR-0005). Sesuai [ADR-0009](../adr/0009-approver-management-and-external-document-boundary.md), pengguna dengan peran approver/Kasubag memiliki wewenang untuk mengedit, menghapus, serta mengubah status workflow jurnal di Kelola Jurnal dan antarmuka persetujuan (dengan panel review sticky), dan persetujuan yang disetujui memicu pengiriman proyeksi publik ke ALAS melalui Direct Service API. Keputusan arsitektur ini tercatat di [ADR-0005](../adr/0005-centralized-lawet-hub-approval-workflow.md), [ADR-0008](../adr/0008-alas-access-gate-and-dynamic-kategori-sync.md), dan [ADR-0009](../adr/0009-approver-management-and-external-document-boundary.md).
 

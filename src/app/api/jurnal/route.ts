@@ -1,5 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { getJurnalList } from '@/entities/jurnal/api/get-jurnal-list'
+import { getMeAction } from '@/entities/lawet-user'
+import { publicDokumen, withoutVisibilityFlag } from '@/entities/jurnal/lib/dokumen-access'
+import { internalErrorResponse } from '@/shared/lib/api-error'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,10 +20,10 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(totalCount / limit)
     const pageItems = rawItems
 
+    // ADR-0007: pengunjung anonim tidak menerima dokumen pendukung; pengguna login hanya yang publik.
+    const viewer = summaryOnly ? null : await getMeAction()
+
     const transformedItems = pageItems.map(item => {
-      const docs = Array.isArray(item.dokumen_pendukung) ? item.dokumen_pendukung : []
-      const publicDocs = docs.filter((d: any) => d && d.is_public === true)
-      
       const docPhotos = Array.isArray(item.dokumentasi) ? item.dokumentasi : []
       const firstPhoto = docPhotos.find((d: any) => d && d.type === 'image')
       const thumbnailUrl = firstPhoto ? firstPhoto.url : null
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
         source_id: item.source_id,
         link_publikasi: item.link_publikasi,
         dokumentasi: item.dokumentasi,
-        dokumen_pendukung: publicDocs.map(({ is_public, ...rest }: any) => rest),
+        dokumen_pendukung: viewer ? withoutVisibilityFlag(publicDokumen(item.dokumen_pendukung)) : [],
         custom_fields: item.custom_fields,
         redaksi: item.redaksi,
         created_at: item.created_at,
@@ -59,11 +62,8 @@ export async function GET(request: NextRequest) {
         current_page: Number(cursor) || 1
       }
     })
-  } catch (error: any) {
-    return NextResponse.json(
-      { status: "error", message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return internalErrorResponse('GET /api/jurnal', error)
   }
 }
 export const dynamic = 'force-dynamic'

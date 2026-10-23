@@ -1,6 +1,7 @@
 import { db } from '@/shared/lib/db'
 import { jurnal } from '../../../../drizzle/schema'
 import { eq, and, or, sql } from 'drizzle-orm'
+import { notExplicitlyPrivateSql } from '../lib/public-visibility-sql'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -16,7 +17,7 @@ export async function getJurnalDetail(id: string, isPublicOnly = true) {
     conditions.push(
       eq(jurnal.is_published, true),
       eq(jurnal.workflow_status, 'published'),
-      sql`NOT (${jurnal.custom_fields}::text ILIKE '%"value": "privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value": "false"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"false"%')`
+      notExplicitlyPrivateSql
     )
   }
   const results = await db.select().from(jurnal).where(and(...conditions)).limit(1)

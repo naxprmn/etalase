@@ -73,6 +73,8 @@ Catatan: `when` migrasi `0002` di journal berbeda dari yang tercatat di database
    curl http://localhost:2006/api/health
    ```
 
+   Respons sehat: `{"status":"ok","service":"alas","db_connected":true}` (HTTP 200). Saat database tidak terjangkau respons HTTP 500 dengan `db_connected:false`; penyebabnya hanya ada di log `alas-app`.
+
 Stack produksi terdiri dari `alas-db` (PostgreSQL hanya pada jaringan internal), `alas-app` (Next.js pada port internal 3000/host 3001), dan `alas-nginx` (port host 2006). `ALAS_DB_PASSWORD` wajib diisi; Compose berhenti sebelum start jika nilainya tidak tersedia. Konfigurasi Nginx (`nginx/alas.conf`) secara ketat memblokir rute mock pengujian (`/api/mock/`) dengan HTTP 404 di lingkungan produksi. Workflow GitHub Actions membangun serta mendorong image GHCR ketika ada push ke `main`.
 
 ### Migrasi pembersihan 0010

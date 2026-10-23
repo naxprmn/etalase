@@ -27,9 +27,9 @@ Aturan ini diperiksa oleh `scripts/check-repository-isolation.mjs` pada **masing
 | Channel | Arah | Tujuan | Boundary |
 | --- | --- | --- | --- |
 | Direct Service | Lawet Hub → ALAS | Mengubah proyeksi jurnal/pimpinan | Bearer + HMAC + event ID; dikirim dari outbox |
-| Dashboard visibility | ALAS → Lawet Hub | Login dan membaca workflow/media terlindungi | JWT scope `alas:dashboard:read`; read-only |
+| Panel session | ALAS → Lawet Hub | Login, authoring, approval, dan media terlindungi | JWT scope `alas:panel` (hanya modul Jurnal ALAS, stateless) |
 
-Keduanya memakai credential berbeda. JWT pengguna dashboard tidak boleh dipakai untuk Direct Service, dan service token tidak boleh dipakai sebagai sesi pengguna.
+Keduanya memakai credential berbeda. JWT pengguna panel tidak boleh dipakai untuk Direct Service, dan service token tidak boleh dipakai sebagai sesi pengguna.
 
 ## Direct Service: delivery flow
 
@@ -203,15 +203,15 @@ Schema executable adalah sumber terakhir untuk field dan limit: `src/features/ju
 
 HTTP non-2xx dan timeout membuat outbox berstatus `failed`. Worker tidak melakukan retry inline yang panjang; row dijadwalkan ulang menggunakan exponential backoff sehingga partial failure tidak menggagalkan transaksi authoring Lawet Hub.
 
-## Dashboard visibility: ALAS → Lawet Hub
+## Panel session: ALAS → Lawet Hub
 
 ALAS memakai `LAWET_API_URL` hanya pada server. Login mengirim header:
 
 ```http
-X-Lawet-Client: alas-dashboard
+X-Lawet-Client: alas-panel
 ```
 
-Lawet Hub kemudian menerbitkan access token dengan scope `alas:dashboard:read` tanpa refresh token. Dependency auth Lawet Hub menolak token tersebut untuk semua method selain `GET`, `HEAD`, dan `OPTIONS`.
+Lawet Hub kemudian menerbitkan access token dengan scope `alas:panel` tanpa refresh token dan tanpa baris sesi (ADR-0010; ADR-0101 di Lawet Hub). Token itu hanya diterima di `/api/v1/jurnal-alas/*` (semua metode) dan `GET /api/v1/auth/me`; rute Lawet Hub lain menjawab `403` walau penggunanya berhak. Umur token `ALAS_PANEL_TOKEN_EXPIRE_MINUTES` di Lawet Hub (default 480 menit), dan cookie `lawet_token` mengikuti klaim `exp` token. Scope `alas:dashboard:read` (read-only, ADR-0002) tetap tersedia untuk klien baca saja dengan header `alas-dashboard`.
 
 Endpoint visibility yang dipakai ALAS:
 
@@ -281,8 +281,9 @@ Perubahan migrasi outbox juga harus menjalankan `backend/tests/test_alas_outbox_
 ## Keputusan arsitektur
 
 - [ADR-0001 — Direct Service delivery guarantees](docs/adr/0001-direct-service-delivery-guarantees.md)
-- [ADR-0002 — Dashboard JWT read boundary](docs/adr/0002-dashboard-jwt-read-boundary.md)
+- [ADR-0002 — Dashboard JWT read boundary](docs/adr/0002-dashboard-jwt-read-boundary.md) (token panel: ADR-0010)
 - [ADR-0003 — FSD App Router boundaries](docs/adr/0003-fsd-app-router-boundaries.md)
 - [ADR-0009 — Wewenang Pengelolaan Approver dan Batasan Unduh Dokumen Eksternal](docs/adr/0009-approver-management-and-external-document-boundary.md)
+- [ADR-0010 — Sesi panel berscope `alas-panel`, kewenangan atas jurnal non-publik, dan pengerasan API publik](docs/adr/0010-panel-session-scope-and-public-api-hardening.md)
 
 ADR yang sudah diterima tidak diedit. Keputusan struktural baru harus ditulis sebagai ADR baru.

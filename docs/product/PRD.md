@@ -279,12 +279,12 @@ Tanggal-tanggal di bulan tertentu yang memiliki entry published.
 
 #### `GET /api/jurnal/{id}`
 
-Detail satu entry. `dokumen_pendukung` hanya yang `is_public = true`. `is_public` field tidak dikirim ke response publik.
+Detail satu entry. Pengunjung anonim tidak menerima `dokumen_pendukung`; pengguna login menerima yang `is_public` bukan `false`, sedangkan superadmin, approver divisinya, dan pemilik menerima semuanya. Field `is_public` tidak dikirim ke response. Jurnal non-publik menjawab `404` bagi yang tidak berwenang.
 
 #### `GET /api/health`
 
 ```json
-{ "status": "ok", "service": "alas", "version": "1.2.0", "db_connected": true, "uptime_seconds": 3600 }
+{ "status": "ok", "service": "alas", "db_connected": true }
 ```
 
 #### `GET /api/pimpinan?date=YYYY-MM-DD`

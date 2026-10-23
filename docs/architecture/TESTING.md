@@ -31,7 +31,12 @@ npx playwright test
 
 `boundary:test` menguji positive/negative fixture checker isolasi repository, `coverage:test` menguji unit test coverage gate, sedangkan `arch:check` memindai repository aktual lalu menjalankan dependency-cruiser. `coverage:gate` memvalidasi bahwa setiap feature baru memiliki test (TDD gate di CI). `npm test` menjalankan semua test satu kali; `test:unit` tidak memerlukan database, sedangkan `test:integration` memerlukan PostgreSQL lokal pada koneksi test default atau `TEST_DATABASE_URL`. Test berbasis Testcontainers juga memerlukan Docker aktif.
 
-Pengujian end-to-end (E2E) dijalankan via Playwright (`tests/e2e/`), dengan konfigurasi channel browser default `process.env.PW_CHANNEL || 'chrome'` untuk kompatibilitas Windows dan Linux, serta mock auth server untuk simulasi flow input panel staf tanpa ketergantungan instans Lawet Hub eksternal.
+Pengujian end-to-end (E2E) dijalankan via Playwright (`tests/e2e/`), dengan konfigurasi channel browser default `process.env.PW_CHANNEL || 'chrome'` untuk kompatibilitas Windows dan Linux, serta mock auth dan mock server (`src/app/api/mock/` & `@/shared/lib/mock-store`) untuk simulasi penuh seluruh siklus operasional jurnal tanpa ketergantungan instans Lawet Hub eksternal:
+1. **User (Staf) Form Submission**: Validasi field wajib form pengajuan, pengisian data lengkap, submit jurnal baru, dan verifikasi muncul di panel Jurnal Saya berstatus `Menunggu Review`.
+2. **Kasubag Review & Reject**: Kasubag membuka antrean persetujuan, validasi catatan pengembalian, dan penolakan jurnal berstatus `Dikembalikan`.
+3. **Staf Revisi & Resubmit**: Staf meninjau catatan revisi pengembalian, memperbarui jurnal melalui formulir perbaikan, dan mengajukan ulang ke antrean review.
+4. **Kasubag Approve & Sync**: Kasubag menyetujui jurnal hasil revisi dan memicu sinkronisasi otomatis ke basis data read model publik ALAS (`jurnal`).
+5. **Publik (Tampilan Luar)**: Pengunjung publik (tanpa autentikasi) memverifikasi jurnal terbit di feed/arsip beranda, menjalankan pencarian kata kunci, serta membuka dialog rincian jurnal sembari memastikan draft/jurnal ditolak terisolasi secara aman.
 
 Untuk validasi produksi, jalankan juga:
 
