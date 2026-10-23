@@ -633,12 +633,17 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
               </div>
             </div>
 
-            {rejectError && !isRejectModalOpen && <p className="text-red-500 text-[13px] mb-3">{rejectError}</p>}
+            {rejectError && (
+              <div className="p-3 mb-4 rounded-[10px] bg-red-50 border border-red-200 text-red-600 text-[13px] font-medium flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>{rejectError}</span>
+              </div>
+            )}
             <div className="flex justify-end gap-3">
 
               <button 
 
-                onClick={() => setIsApproveModalOpen(false)}
+                onClick={() => { setIsApproveModalOpen(false); setRejectError(""); }}
 
                 disabled={isRejecting}
 
