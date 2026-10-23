@@ -5,9 +5,6 @@ import { revalidatePath } from 'next/cache'
 import { getMeAction, canApproveJurnal } from '@/entities/lawet-user'
 import { JurnalSubmissionPayload, jurnalSubmissionSchema } from '../model/submission-schema'
 import { toMediaObjectName } from '../lib/media-url'
-import { db } from '@/shared/lib/db'
-import { jurnal } from '../../../../drizzle/schema'
-import { eq, or } from 'drizzle-orm'
 
 /**
  * Pengajuan / edit jurnal langsung ke Lawet Hub (ADR-0005).
@@ -112,25 +109,8 @@ export async function submitJurnalAction(payload: JurnalSubmissionPayload) {
       }
     }
 
-    // Sinkronisasi lokal langsung ke database ALAS jika jurnal sudah ada di read model,
-    // agar panel dan beranda tidak menampilkan data usang sebelum event Celery tuntas.
-    try {
-      const targetId = sourceId || validatedData.id
-      if (targetId) {
-        await db.update(jurnal).set({
-          judul: validatedData.judul,
-          ringkasan: validatedData.ringkasan || null,
-          tanggal_kegiatan: validatedData.tanggal_kegiatan,
-          kategori: validatedData.kategori,
-          is_published: validatedData.is_published,
-          custom_fields: customFields,
-          updated_at: new Date(),
-        }).where(or(eq(jurnal.source_id, targetId), eq(jurnal.id, targetId)))
-      }
-    } catch {
-      // Best-effort local update
-    }
-
+    // ADR-0005: DB ALAS murni read model publik. Perubahan tampil di etalase setelah Lawet Hub
+    // mengirimnya lewat Direct Service API (outbox, hitungan detik); tidak ada penulisan lokal di sini.
     revalidatePath('/')
     revalidatePath('/panel')
 

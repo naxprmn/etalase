@@ -55,7 +55,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { source
     }
 
     const fields = [
-      'judul', 'tanggal_kegiatan', 'kategori', 'link_publikasi',
+      'judul', 'ringkasan', 'tanggal_kegiatan', 'kategori', 'link_publikasi',
       'dokumentasi', 'pihak_terkait', 'custom_fields', 'is_published',
       'tags', 'redaksi', 'divisi'
     ]

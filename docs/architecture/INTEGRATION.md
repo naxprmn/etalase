@@ -112,6 +112,8 @@ Konfigurasi yang hilang atau invalid menyebabkan request gagal tertutup, bukan m
 
 ALAS menyimpan setiap `X-ALAS-Event-Id` di tabel `service_events`. Insert ledger memakai `ON CONFLICT DO NOTHING`; bila event sudah ada, endpoint mengembalikan `action: "duplicate"` tanpa mengulang mutasi.
 
+Baris `service_events` yang lebih tua dari 90 hari dihapus otomatis (paling sering sekali per jam per proses); event setua itu sudah ditolak verifikasi HMAC sehingga tidak dapat diputar ulang.
+
 Claim event dan perubahan jurnal/pimpinan berada dalam transaksi database yang sama. Jika handler gagal, claim ikut rollback sehingga delivery yang sama dapat dicoba kembali. `source_id` unik menjadi identity lintas sistem dan upsert create/update dilakukan atomik.
 
 Semantik delete bersifat soft state:
@@ -126,7 +128,7 @@ Semantik delete bersifat soft state:
 | Method | Path | Kontrak |
 | --- | --- | --- |
 | `POST` | `/api/service/jurnal` | Upsert full payload berdasarkan `source_id`. |
-| `GET` | `/api/service/jurnal` | List; filter `page`, `limit`, `divisi`, `search`, `start_date`, `end_date`, `sort`. |
+| `GET` | `/api/service/jurnal` | List terpaginasi (bawaan `page=1`, `limit=50`, maksimum 100); filter `divisi`, `search` (teks literal), `start_date`, `end_date`, `sort`, dan `published=true` (hanya yang benar-benar terbit). Respons: `data`, `total`, `page`, `limit`. |
 | `GET` | `/api/service/jurnal/:sourceId` | Detail proyeksi berdasarkan source ID. |
 | `PATCH` | `/api/service/jurnal/:sourceId` | Partial update; mendukung `is_published`. |
 | `DELETE` | `/api/service/jurnal/:sourceId` | Unpublish proyeksi. |
@@ -284,6 +286,7 @@ Perubahan migrasi outbox juga harus menjalankan `backend/tests/test_alas_outbox_
 - [ADR-0002 — Dashboard JWT read boundary](docs/adr/0002-dashboard-jwt-read-boundary.md) (token panel: ADR-0010)
 - [ADR-0003 — FSD App Router boundaries](docs/adr/0003-fsd-app-router-boundaries.md)
 - [ADR-0009 — Wewenang Pengelolaan Approver dan Batasan Unduh Dokumen Eksternal](docs/adr/0009-approver-management-and-external-document-boundary.md)
+- [ADR-0011 — Kontrak daftar Service API, panel tanpa penulisan ganda, dan retensi ledger event](docs/adr/0011-service-api-list-contract-and-ledger-retention.md)
 - [ADR-0010 — Sesi panel berscope `alas-panel`, kewenangan atas jurnal non-publik, dan pengerasan API publik](docs/adr/0010-panel-session-scope-and-public-api-hardening.md)
 
 ADR yang sudah diterima tidak diedit. Keputusan struktural baru harus ditulis sebagai ADR baru.
