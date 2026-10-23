@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { canApproveJurnal } from '@/entities/lawet-user'
 import {
   canDeleteJurnal,
   canEditJurnal,
@@ -47,5 +48,12 @@ describe('edit/delete permissions mirror Lawet Hub rules', () => {
     expect(canDeleteJurnal(staff, { owner_id: 'u1' }, 'u1')).toBe(true)
     expect(canDeleteJurnal(staff, { owner_id: 'u2' }, 'u1')).toBe(false)
     expect(canDeleteJurnal(null, { owner_id: 'u1' }, 'u1')).toBe(false)
+  })
+})
+describe('publish/approval capabilities', () => {
+  it('identifies who can approve and publish journals (only approver/superadmin)', () => {
+    expect(canApproveJurnal(staff)).toBe(false)
+    expect(canApproveJurnal(approver)).toBe(true)
+    expect(canApproveJurnal(superadmin)).toBe(true)
   })
 })

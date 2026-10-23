@@ -70,7 +70,7 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
 
 
 
-  const { data: response, isLoading } = useQuery({
+  const { data: response, isLoading, isError } = useQuery({
 
     queryKey: ['jurnal', id],
 
@@ -144,14 +144,15 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
 
 
 
-        {isLoading || !item ? (
-
+        {isLoading ? (
           <div className="flex-1 flex items-center justify-center p-12 text-[#142B42] font-medium">
-
             Memuat data jurnal...
-
           </div>
-
+        ) : isError || !item ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-[#142B42]">
+            <p className="font-bold text-[16px] mb-2">Jurnal tidak dapat ditampilkan</p>
+            <p className="text-[13px] text-[#71717A]">Data jurnal tidak ditemukan atau bersifat internal/privat.</p>
+          </div>
         ) : (
           <div className="p-5 sm:p-10 pb-8">
 

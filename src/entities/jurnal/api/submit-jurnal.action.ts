@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { getMeAction } from '@/entities/lawet-user'
+import { getMeAction, canApproveJurnal } from '@/entities/lawet-user'
 import { JurnalSubmissionPayload, jurnalSubmissionSchema } from '../model/submission-schema'
 import { toMediaObjectName } from '../lib/media-url'
 import { db } from '@/shared/lib/db'
@@ -79,7 +79,11 @@ export async function submitJurnalAction(payload: JurnalSubmissionPayload) {
     }
 
     if (validatedData.status) {
-      body.status = validatedData.status
+      if (validatedData.status === 'published' && !canApproveJurnal(user)) {
+        body.status = 'draft'
+      } else {
+        body.status = validatedData.status
+      }
     }
 
     const saved = isUpdate

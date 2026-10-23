@@ -71,7 +71,16 @@ export function isJurnalExplicitlyPrivate(record: {
       if (val === 'false' || val === 'privat' || val === 'private') {
         return true
       }
+      if (val === 'true' || val === 'publik' || val === 'public') {
+        return false
+      }
     }
+  }
+
+  // Jika is_published secara eksplisit diset true, lampiran dokumen internal (ADR-0007)
+  // tidak mengubah jurnal menjadi privat.
+  if (record.is_published === true) {
+    return false
   }
 
   const docs = Array.isArray(record.dokumen_pendukung) ? record.dokumen_pendukung : []

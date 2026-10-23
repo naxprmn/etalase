@@ -33,7 +33,18 @@ describe('determineJurnalVisibility', () => {
     ).toBe(true)
   })
 
-  it('sets private visibility when all supporting documents are private', () => {
+  it('keeps journal public when is_published is true even if all docs are internal (ADR-0007)', () => {
+    expect(
+      determineJurnalVisibility({
+        is_published: true,
+        dokumen_pendukung: [
+          { nama: 'internal_sk.pdf', url: 'http://example.com/sk.pdf', tipe: 'pdf', is_public: false },
+        ],
+      })
+    ).toBe(true)
+  })
+
+  it('determines private only if journal is unspecified and docs indicate private', () => {
     expect(
       determineJurnalVisibility({
         dokumen_pendukung: [
@@ -89,10 +100,18 @@ describe('isJurnalExplicitlyPrivate', () => {
     ).toBe(true)
   })
 
-  it('identifies private journal when all docs are private', () => {
+  it('does NOT mark journal private when is_published is true even if docs are internal (ADR-0007)', () => {
     expect(
       isJurnalExplicitlyPrivate({
         is_published: true,
+        dokumen_pendukung: [{ nama: 'secret.pdf', url: 'http://secret.pdf', is_public: false }],
+      })
+    ).toBe(false)
+  })
+
+  it('identifies private journal when explicitly marked or docs indicate private on unset is_published', () => {
+    expect(
+      isJurnalExplicitlyPrivate({
         dokumen_pendukung: [{ nama: 'secret.pdf', url: 'http://secret.pdf', is_public: false }],
       })
     ).toBe(true)
