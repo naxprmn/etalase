@@ -43,7 +43,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
     env: {
-      LAWET_API_URL: 'http://localhost:3000/api/mock'
+      LAWET_API_URL: 'http://localhost:3000/api/mock',
+      ENABLE_MOCK_AUTH: 'true'
     }
   },
 });
