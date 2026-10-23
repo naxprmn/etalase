@@ -4,8 +4,12 @@ import { upsertJurnal } from '@/features/jurnal-sync/lib/upsert-jurnal'
 import { processServiceEvent } from '@/features/service-events/lib/process-service-event'
 import { jurnalPayloadSchema } from '@/features/jurnal-sync/model/service-payload'
 import { db } from '@/shared/lib/db'
+import { escapeLike } from '@/shared/lib/escape-like'
 import { jurnal } from '../../../../../drizzle/schema'
 import { eq, ilike, or, and, sql, gte, lte } from 'drizzle-orm'
+
+const DEFAULT_LIMIT = 50
+const MAX_LIMIT = 100
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -51,22 +55,24 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const pageStr = searchParams.get('page')
-    const limitStr = searchParams.get('limit')
     const divisiParam = searchParams.get('divisi')
     const searchParam = searchParams.get('search')
     const startDateParam = searchParams.get('start_date')
     const endDateParam = searchParams.get('end_date')
 
     const filters = []
+    if (searchParams.get('published') === 'true') {
+      filters.push(eq(jurnal.is_published, true), eq(jurnal.workflow_status, 'published'))
+    }
     if (divisiParam) {
       filters.push(eq(jurnal.divisi, divisiParam))
     }
     if (searchParam) {
+      const pattern = `%${escapeLike(searchParam)}%`
       filters.push(
         or(
-          ilike(jurnal.judul, `%${searchParam}%`),
-          sql`${jurnal.tags}::text ilike ${`%${searchParam}%`}`
+          ilike(jurnal.judul, pattern),
+          sql`${jurnal.tags}::text ilike ${pattern}`
         )
       )
     }
@@ -76,11 +82,7 @@ export async function GET(request: NextRequest) {
     if (endDateParam) {
       filters.push(lte(jurnal.tanggal_kegiatan, endDateParam))
     }
-
-    let baseQuery = db.select().from(jurnal)
-    if (filters.length > 0) {
-      baseQuery = baseQuery.where(and(...filters)) as any
-    }
+    const where = filters.length > 0 ? and(...filters) : undefined
 
     const sortParam = searchParams.get('sort') || 'tanggal_desc'
     let orderExpression = [sql`${jurnal.tanggal_kegiatan} DESC`, sql`${jurnal.id} DESC`]
@@ -92,25 +94,17 @@ export async function GET(request: NextRequest) {
       orderExpression = [sql`${jurnal.judul} DESC`, sql`${jurnal.id} DESC`]
     }
 
-    const orderedQuery = baseQuery.orderBy(...orderExpression)
+    // Daftar selalu dipaginasi: tanpa page/limit dipakai halaman 1 dengan limit bawaan.
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.max(1, Math.min(MAX_LIMIT, parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT)) || DEFAULT_LIMIT))
 
-    if (pageStr || limitStr) {
-      const page = Math.max(1, parseInt(pageStr || '1') || 1)
-      const limit = Math.max(1, Math.min(100, parseInt(limitStr || '12') || 12))
-      const offset = (page - 1) * limit
-      
-      const paginatedItems = await orderedQuery.limit(limit).offset(offset)
-      return NextResponse.json({
-        status: "ok",
-        data: paginatedItems
-      })
-    }
+    const [{ total }] = await db.select({ total: sql<number>`count(*)::int` }).from(jurnal).where(where)
+    const items = await db.select().from(jurnal).where(where)
+      .orderBy(...orderExpression)
+      .limit(limit)
+      .offset((page - 1) * limit)
 
-    const items = await orderedQuery
-    return NextResponse.json({
-      status: "ok",
-      data: items
-    })
+    return NextResponse.json({ status: "ok", data: items, total, page, limit })
   } catch {
     return NextResponse.json({ status: "error", message: "internal error" }, { status: 500 })
   }
