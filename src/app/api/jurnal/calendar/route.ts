@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { getJurnalCalendar } from '@/entities/jurnal/api/get-jurnal-calendar'
+import { internalErrorResponse } from '@/shared/lib/api-error'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,11 +19,8 @@ export async function GET(request: NextRequest) {
       status: "ok",
       data: calendarData
     })
-  } catch (error: any) {
-    return NextResponse.json(
-      { status: "error", message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return internalErrorResponse('GET /api/jurnal/calendar', error)
   }
 }
 export const dynamic = 'force-dynamic'

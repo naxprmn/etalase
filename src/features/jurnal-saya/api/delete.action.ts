@@ -32,7 +32,7 @@ export async function deleteJurnalAction(id: string) {
       const data = await res.json().catch(() => null)
       const detail = typeof data?.detail === 'string' ? data.detail : null
       if (res.status === 403) {
-        return { success: false, error: detail || 'Akses ditolak: hanya pemilik atau superadmin yang dapat menghapus jurnal ini.' }
+        return { success: false, error: detail || 'Akses ditolak: hanya pemilik (jurnal yang belum terbit), approver divisinya, atau superadmin yang dapat menghapus jurnal ini.' }
       }
       if (res.status === 404) {
         // Sudah terhapus (mis. klik ganda atau daftar belum menyusul).

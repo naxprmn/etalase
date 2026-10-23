@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { hasAlasAccess } from '@/entities/lawet-user'
+import { sessionSecondsRemaining } from '../lib/session-lifetime'
 
 const LAWET_API_URL = process.env.LAWET_API_URL as string
 
@@ -31,6 +32,8 @@ export async function loginAction(username: string, pin: string) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // ADR-0010: token berscope panel (hanya modul Jurnal ALAS), stateless, tanpa refresh token.
+        'X-Lawet-Client': 'alas-panel',
       },
       body: JSON.stringify({ username, pin }),
     })
@@ -53,6 +56,12 @@ export async function loginAction(username: string, pin: string) {
 
     // Save token in HttpOnly cookie
     if (data.access_token) {
+      // Cookie tidak boleh hidup lebih lama dari token; token panel tidak punya refresh.
+      const maxAge = sessionSecondsRemaining(data.access_token)
+      if (maxAge <= 0) {
+        return { success: false, error: 'Sesi dari Lawet Hub sudah kedaluwarsa. Silakan coba lagi.' }
+      }
+
       cookies().set({
         name: 'lawet_token',
         value: data.access_token,
@@ -60,7 +69,7 @@ export async function loginAction(username: string, pin: string) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
+        maxAge,
       })
       
       return { success: true, user: data.user }

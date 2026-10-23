@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { getPimpinanDetail } from '@/entities/pimpinan/api/get-pimpinan-detail'
+import { internalErrorResponse } from '@/shared/lib/api-error'
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -17,11 +18,8 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       status: "ok",
       data: item
     })
-  } catch (error: any) {
-    return NextResponse.json(
-      { status: "error", message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return internalErrorResponse('GET /api/pimpinan/[id]', error)
   }
 }
 export const dynamic = 'force-dynamic'

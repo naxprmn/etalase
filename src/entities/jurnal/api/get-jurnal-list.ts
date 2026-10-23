@@ -1,6 +1,7 @@
 import { db } from '@/shared/lib/db'
 import { jurnal } from '../../../../drizzle/schema'
 import { and, eq, ilike, or, lt, sql } from 'drizzle-orm'
+import { notExplicitlyPrivateSql } from '../lib/public-visibility-sql'
 
 interface GetJurnalListParams {
   q?: string
@@ -22,7 +23,7 @@ export async function getJurnalList({ q = '', kategori = '', cursor = '', limit 
   let conditions = [
     eq(jurnal.is_published, true),
     eq(jurnal.workflow_status, 'published'),
-    sql`NOT (${jurnal.custom_fields}::text ILIKE '%"value": "privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"privat"%' OR ${jurnal.custom_fields}::text ILIKE '%"value": "false"%' OR ${jurnal.custom_fields}::text ILIKE '%"value":"false"%')`
+    notExplicitlyPrivateSql,
   ]
 
   if (date) {
