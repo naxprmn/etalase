@@ -11,6 +11,7 @@ import { toMediaDisplayUrl } from '@/entities/jurnal/lib/media-url'
 import { getCategoryLabel } from '@/shared/ui/colors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useDeletedJurnalIds, withoutDeletedJurnals } from '@/features/jurnal-saya/model/deleted-jurnals'
+import { Spinner } from '@/shared/ui/spinner'
 
 
 const queryClient = new QueryClient()
@@ -206,12 +207,31 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
     fotoInputRef.current?.click();
   }
 
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      const { logoutAction } = await import('@/features/lawet-auth/api/login.action');
+      await logoutAction();
+      router.push('/');
+    } catch {
+      setIsLoggingOut(false);
+    }
+  };
+
   const [dragActiveFoto, setDragActiveFoto] = React.useState(false);
   const fotoInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [uploadingFoto, setUploadingFoto] = React.useState(0);
+  const [uploadingDoc, setUploadingDoc] = React.useState(0);
 
   const handleFotoFiles = async (files: FileList) => {
     const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     const newFotos: string[] = [];
+    setUploadingFoto(validFiles.length);
+    try {
     for (const file of validFiles) {
       const formData = new FormData();
       formData.append('file', file);
@@ -221,6 +241,10 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
       } else {
         showToast(res.error || 'Gagal mengunggah foto ke server.', 'error');
       }
+      setUploadingFoto(count => Math.max(0, count - 1));
+    }
+    } finally {
+      setUploadingFoto(0);
     }
     if (newFotos.length > 0) setFotos(prev => [...prev, ...newFotos]);
   };
@@ -254,6 +278,8 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
   const handleDocFiles = async (files: FileList) => {
     const validFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
     const newDocs: {nama: string, url: string}[] = [];
+    setUploadingDoc(validFiles.length);
+    try {
     for (const file of validFiles) {
       const formData = new FormData();
       formData.append('file', file);
@@ -265,6 +291,10 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
       } else {
         showToast(res.error || 'Gagal mengunggah dokumen ke server.', 'error');
       }
+      setUploadingDoc(count => Math.max(0, count - 1));
+    }
+    } finally {
+      setUploadingDoc(0);
     }
     if (newDocs.length > 0) setDocs(prev => [...prev, ...newDocs]);
   };
@@ -358,15 +388,12 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
             <span>Web</span>
           </button>
           <div 
-            onClick={async () => {
-              const { logoutAction } = await import('@/features/lawet-auth/api/login.action');
-              await logoutAction();
-              router.push('/');
-            }}
+            onClick={handleLogout}
+            aria-busy={isLoggingOut}
             className="w-8 h-8 rounded-full bg-[#F7921C] text-white flex items-center justify-center font-bold text-xs cursor-pointer shadow-sm active:scale-95 transition-transform"
             title={`Logout (${user?.name || 'User'})`}
           >
-            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+            {isLoggingOut ? <Spinner size={14} label="Keluar" /> : (user?.name?.charAt(0)?.toUpperCase() || 'U')}
           </div>
         </div>
       </div>
@@ -473,11 +500,8 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
           </button>
           
           <div 
-            onClick={async () => {
-              const { logoutAction } = await import('@/features/lawet-auth/api/login.action');
-              await logoutAction();
-              router.push('/');
-            }}
+            onClick={handleLogout}
+            aria-busy={isLoggingOut}
             className="w-full xl:w-[302px] h-[77px] flex items-center justify-between px-5 bg-[#DBEBFF] rounded-[12px] cursor-pointer hover:bg-[#ffcdd2] hover:text-red-700 transition-colors group"
             title="Logout"
           >
@@ -490,6 +514,7 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
                 <span className="text-[#00306E]/[0.6] group-hover:text-red-700/80 text-[11px] font-semibold">{user?.division?.name || 'Divisi'}</span>
               </div>
             </div>
+            {isLoggingOut && <Spinner size={16} label="Keluar" />}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#5D6A77] group-hover:text-red-700"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           </div>
         </div>
@@ -805,6 +830,12 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
                         </button>
                       </div>
                     ))}
+                    {uploadingFoto > 0 && (
+                      <div className="w-[90px] h-[90px] rounded-[11px] bg-[#F6F9FC] border border-dashed border-[#4F83F5] flex flex-col items-center justify-center gap-1 text-[#4F83F5] text-[11px] font-semibold" aria-live="polite">
+                        <Spinner size={22} label="Mengunggah foto" />
+                        <span>Mengunggah {uploadingFoto}</span>
+                      </div>
+                    )}
                     <button type="button" onClick={() => fotoInputRef.current?.click()} className="w-[90px] h-[90px] rounded-[11px] bg-[#F6F9FC] border border-[#E5E7EB] flex items-center justify-center text-[#7B8EA0] hover:bg-[#EEF2F6] hover:text-[#4F83F5] transition-all cursor-pointer">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </button>
@@ -842,6 +873,12 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
                         </button>
                       </div>
                     ))}
+                    {uploadingDoc > 0 && (
+                      <div className="flex items-center gap-3 bg-[#F6F9FC] border border-dashed border-[#4F83F5] px-4 py-3 rounded-[9px] text-[#4F83F5] text-[13px] font-semibold" aria-live="polite">
+                        <Spinner size={16} label="Mengunggah dokumen" />
+                        <span>Mengunggah {uploadingDoc} dokumen...</span>
+                      </div>
+                    )}
                     <button type="button" onClick={() => docInputRef.current?.click()} className="w-full h-[46px] rounded-[9px] bg-[#EEF2F6] flex items-center justify-center gap-2 text-[#7B8EA0] text-[13px] font-bold hover:bg-[#E5E9F0] hover:text-[#142B42] transition-colors cursor-pointer mt-1">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                       Tambah Dokumen
@@ -988,9 +1025,10 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
                   <button 
                     type="submit" 
                     disabled={isSubmitting}
+                    aria-busy={isSubmitting}
                     className={`w-[229px] h-[59px] bg-[#396094] hover:bg-[#2A4B75] text-white font-bold text-[14px] rounded-[15px] flex items-center justify-center gap-2 transition-colors ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
-                    {isSubmitting ? 'Mengirim...' : activeMenu === 'edit' ? 'Simpan Perubahan' : 'Ajukan Jurnal'}
+                    {isSubmitting ? (<span className="inline-flex items-center justify-center gap-2"><Spinner size={18} /> Mengirim...</span>) : activeMenu === 'edit' ? 'Simpan Perubahan' : 'Ajukan Jurnal'}
                     {!isSubmitting && (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     )}

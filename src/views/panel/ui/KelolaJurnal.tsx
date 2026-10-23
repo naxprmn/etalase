@@ -9,6 +9,7 @@ import { markJurnalDeleted } from '@/features/jurnal-saya/model/deleted-jurnals'
 import { JurnalDetailModal } from '@/entities/jurnal/ui/jurnal-detail-modal.client';
 import { canDeleteJurnal, canEditJurnal, isInProcess, workflowStatusLabel } from '@/entities/jurnal/lib/workflow-status';
 import { getCategoryLabel } from '@/shared/ui/colors';
+import { Spinner } from '@/shared/ui/spinner'
 
 const COLORS = ['#4ade80', '#fb923c', '#f87171', '#60a5fa', '#a78bfa'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -593,9 +594,10 @@ export default function KelolaJurnal({ workspace, error }: { workspace: JurnalWo
                     router.refresh();
                   }}
                   disabled={isDeleting}
+                  aria-busy={isDeleting}
                   className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors"
                 >
-                  {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
+                  {isDeleting ? (<span className="inline-flex items-center justify-center gap-2"><Spinner size={16} /> Menghapus...</span>) : 'Ya, Hapus'}
                 </button>
               </div>
             </div>

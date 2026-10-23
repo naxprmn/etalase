@@ -13,6 +13,7 @@ import { markJurnalDeleted } from '@/features/jurnal-saya/model/deleted-jurnals'
 import { JurnalDetailModal } from '@/entities/jurnal/ui/jurnal-detail-modal.client';
 import { canDeleteJurnal, canEditJurnal, isInProcess, workflowStatusLabel } from '@/entities/jurnal/lib/workflow-status';
 import { getCategoryLabel } from '@/shared/ui/colors';
+import { Spinner } from '@/shared/ui/spinner'
 export default function JurnalSaya({ workspace, error }: { workspace: JurnalWorkspace | null, error: string | null }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Semua'|'Proses'|'Terbit'>('Semua');
@@ -521,6 +522,7 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
               <div className="flex items-center gap-3 w-full">
                 <button 
                   onClick={() => setDeletePopup(null)}
+                  disabled={isDeleting}
                   className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
                 >
                   Batal
@@ -541,9 +543,10 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
                     }
                   }}
                   disabled={isDeleting}
+                  aria-busy={isDeleting}
                   className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
+                  {isDeleting ? (<span className="inline-flex items-center justify-center gap-2"><Spinner size={16} /> Menghapus...</span>) : 'Ya, Hapus'}
                 </button>
               </div>
             </div>

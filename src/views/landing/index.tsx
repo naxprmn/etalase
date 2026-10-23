@@ -19,6 +19,7 @@ import {
 } from './hero-text-reveal.client'
 
 import { type LawetUser } from '@/entities/lawet-user'
+import { Spinner } from '@/shared/ui/spinner'
 
 const queryClient = new QueryClient()
 
@@ -592,11 +593,17 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
                           value={pin[index]}
                           onChange={(e) => handlePinChange(index, e.target.value)}
                           onKeyDown={(e) => handlePinKeyDown(index, e)}
+                          disabled={isSubmitting}
                           className="flex-1 min-w-0 aspect-square max-w-[64px] md:max-w-[100px] max-h-[100px] bg-[#F2F5FF] rounded-[14px] md:rounded-[16px] text-center text-[28px] md:text-[40px] font-bold text-[#142B42] outline-none border-2 border-transparent focus:border-[#4F83F5] transition-colors [&::-ms-reveal]:hidden [&::-ms-clear]:hidden" 
                         />
                       ))}
                     </div>
                   </div>
+                    {isSubmitting && (
+                      <div className="mt-4 flex items-center justify-center gap-2 text-[#075599] font-medium text-sm" aria-live="polite">
+                        <Spinner size={18} label="Memeriksa PIN" /> Memeriksa PIN...
+                      </div>
+                    )}
                     {loginError && (
                       <div className="mt-4 text-center text-red-500 font-medium text-sm">
                         {loginError}
