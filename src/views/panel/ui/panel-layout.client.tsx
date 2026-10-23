@@ -217,7 +217,7 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
       formData.append('file', file);
       const res = await uploadFotoAction(formData);
       if (res.success && res.data?.url) {
-        newFotos.push(res.data.url);
+        newFotos.push(toMediaDisplayUrl(res.data.url));
       } else {
         showToast(res.error || 'Gagal mengunggah foto ke server.', 'error');
       }
@@ -799,7 +799,7 @@ export default function PanelLayoutClient({ activeMenu, workspace: serverWorkspa
                   <div className="flex flex-wrap gap-4">
                     {fotos.map((foto, idx) => (
                       <div key={idx} className="relative group rounded-[11px] overflow-hidden w-[90px] h-[90px] border border-[#E5E7EB] shadow-sm">
-                        <img src={foto} alt="" className="w-full h-full object-cover" />
+                        <img src={toMediaDisplayUrl(foto)} alt="" className="w-full h-full object-cover" />
                         <button type="button" onClick={() => removeFoto(idx)} className="absolute top-1 right-1 bg-white/90 text-red-500 rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
   }
 
   const [prefix, ...rest] = params.path
-  const allowedPrefixes = new Set(['jurnal-foto', 'jurnal-dokumen'])
+  const allowedPrefixes = new Set(['jurnal-foto', 'jurnal-dokumen', 'alas_media'])
   const hasUnsafeSegment = params.path.some(
     (segment) => !segment || segment === '.' || segment === '..' || /[\\/]/.test(segment),
   )
