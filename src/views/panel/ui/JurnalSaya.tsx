@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import type { JurnalWorkspace } from '@/features/jurnal-saya/api/get-my-jurnals.action';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Grid, UserCheck, ChevronDown, User, Calendar, Clock, CheckCircle2, Edit2, Trash2, Eye, AlertTriangle } from 'lucide-react';
+import { FileText, Grid, UserCheck, ChevronDown, User, Calendar, Clock, CheckCircle2, Edit2, Trash2, Eye, AlertTriangle, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
 const CAT_COLORS = ['#60A5FA', '#F87171', '#FBBF24', '#818CF8']; // Sosialisasi (Blue), Rapat (Red), MoU (Yellow), Lainnya (Indigo)
@@ -21,6 +21,20 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
   const [detailPopup, setDetailPopup] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+
+  const generateCalendar = () => {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    const days: (Date | null)[] = [];
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
+    return days;
+  };
+  const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   
   const [toast, setToast] = useState<{message: string, type: 'info'|'success'|'error'} | null>(null);
   const showToast = (message: string, type: 'info'|'success'|'error' = 'info') => {
@@ -122,39 +136,122 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
           {toast.type === 'error' ? <AlertTriangle size={18} /> : toast.type === 'success' ? <CheckCircle2 size={18} /> : <FileText size={18} />} {toast.message}
         </div>
       )}
-      {/* Top 3 Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm flex flex-col justify-center">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="text-[#396094]">
-              <FileText size={24} strokeWidth={2} />
+      {/* Dashboard Top Section */}
+      <div className="flex flex-col lg:flex-row gap-6 mb-8">
+        {/* Left: 3 Metric Cards */}
+        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="text-[#396094]">
+                <FileText size={24} strokeWidth={2} />
+              </div>
+              <h4 className="text-[#396094] font-bold text-[18px]">Semua Jurnal</h4>
             </div>
-            <h4 className="text-[#396094] font-bold text-[18px]">Semua Jurnal</h4>
+            <h2 className="text-[40px] font-bold text-[#142B42] mb-1">{total}</h2>
+            <p className="text-[#A0AAB5] text-sm">Total Jurnal yang diajukan</p>
           </div>
-          <h2 className="text-[40px] font-bold text-[#142B42] mb-1">{total}</h2>
-          <p className="text-[#A0AAB5] text-sm">Total Jurnal yang diajukan</p>
+          
+          <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="text-[#142B42]">
+                <Grid size={24} strokeWidth={2} />
+              </div>
+              <h4 className="text-[#142B42] font-bold text-[18px]">Menunggu Proses</h4>
+            </div>
+            <h2 className="text-[40px] font-bold text-[#142B42] mb-1">{pending}</h2>
+            <p className="text-[#A0AAB5] text-sm">Menunggu review, dikembalikan, atau sedang diterbitkan</p>
+          </div>
+          
+          <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm flex flex-col justify-center">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="text-[#142B42]">
+                <UserCheck size={24} strokeWidth={2} />
+              </div>
+              <h4 className="text-[#142B42] font-bold text-[18px]">Terbit</h4>
+            </div>
+            <h2 className="text-[40px] font-bold text-[#142B42] mb-1">{published}</h2>
+            <p className="text-[#A0AAB5] text-sm">Telah Di Publikasikan</p>
+          </div>
         </div>
-        
-        <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm flex flex-col justify-center">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="text-[#142B42]">
-              <Grid size={24} strokeWidth={2} />
+
+        {/* Right: Calendar */}
+        <div className="w-full lg:w-[320px] shrink-0 flex">
+          <div className="bg-white rounded-[21px] border border-[#E5E7EB] shadow-[0_4px_20px_rgba(0,0,0,0.05)] w-full h-full flex flex-col overflow-hidden">
+            {/* macOS Style Top Bar */}
+            <div className="h-[28px] w-full bg-[#254360] flex items-center px-4 gap-2 shrink-0">
+              <div className="w-[10px] h-[10px] rounded-full bg-[#ED695E]"></div>
+              <div className="w-[10px] h-[10px] rounded-full bg-[#F4BF4F]"></div>
+              <div className="w-[10px] h-[10px] rounded-full bg-[#61C554]"></div>
             </div>
-            <h4 className="text-[#142B42] font-bold text-[18px]">Menunggu Proses</h4>
-          </div>
-          <h2 className="text-[40px] font-bold text-[#142B42] mb-1">{pending}</h2>
-          <p className="text-[#A0AAB5] text-sm">Menunggu review, dikembalikan, atau sedang diterbitkan</p>
-        </div>
-        
-        <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-sm flex flex-col justify-center">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="text-[#142B42]">
-              <UserCheck size={24} strokeWidth={2} />
+            
+            <div className="p-5 flex-1 flex flex-col min-w-0 min-h-0">
+              {/* Calendar Nav */}
+              <div className="flex justify-between items-center mb-6 gap-1">
+                <div className="flex items-center gap-1 shrink-0">
+                  <button 
+                    type="button"
+                    onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
+                    className="p-0.5 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <ChevronLeft size={16} className="text-[#142B42]" />
+                  </button>
+                  <h4 className="text-[11px] font-bold text-[#142B42] uppercase tracking-wider min-w-[70px] text-center">
+                    {MONTH_NAMES[calendarDate.getMonth()]}
+                  </h4>
+                  <button 
+                    type="button"
+                    onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
+                    className="p-0.5 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <ChevronRight size={16} className="text-[#142B42]" />
+                  </button>
+                </div>
+                <div className="text-[10px] px-2 py-1 font-bold text-[#7B8EA0] shrink-0">
+                  {calendarDate.getFullYear()}
+                </div>
+              </div>
+            
+              <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                {['Ming', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(d => (
+                  <div key={d} className="text-[11px] font-bold text-[#7B8EA0]">{d}</div>
+                ))}
+              </div>
+            
+              <div className="grid grid-cols-7 gap-1">
+                {generateCalendar().map((date, idx) => {
+                  if (!date) return <div key={`empty-${idx}`} className="h-9"></div>;
+                  const tZoffset = date.getTimezoneOffset() * 60000;
+                  const localISOTime = (new Date(date.getTime() - tZoffset)).toISOString().split('T')[0];
+                  const isSelected = selectedDate === localISOTime;
+                  const isToday = (new Date(Date.now() - tZoffset)).toISOString().split('T')[0] === localISOTime;
+                  
+                  const hasDraft = allItems.some(j => j.tanggal_kegiatan && j.tanggal_kegiatan.startsWith(localISOTime) && j.status === 'draft');
+                  const hasPublished = allItems.some(j => j.tanggal_kegiatan && j.tanggal_kegiatan.startsWith(localISOTime) && j.status === 'published');
+                  
+                  return (
+                    <div key={localISOTime} className="flex flex-col items-center justify-start pt-1 h-10 relative">
+                      <button 
+                        type="button"
+                        onClick={() => { setSelectedDate(isSelected ? null : localISOTime); setCurrentPage(1); }}
+                        className={`h-7 w-7 rounded-full flex items-center justify-center text-[11.5px] transition-colors ${
+                          isSelected ? 'bg-[#396094] text-white font-bold shadow-sm' : 
+                          isToday ? 'bg-[#EEF2F6] text-[#396094] font-bold' : 
+                          'text-[#142B42] hover:bg-[#F6F9FC] font-medium'
+                        }`}
+                      >
+                        {date.getDate()}
+                      </button>
+                      <div className="absolute bottom-[2px] w-full flex justify-center items-center gap-[2px]">
+                        {isToday && <span className="text-[6.5px] font-bold text-[#396094] uppercase tracking-tighter" style={{ transform: 'scale(0.85)', whiteSpace: 'nowrap' }}>HARI INI</span>}
+                        {!isToday && hasDraft && <div className="w-1 h-1 rounded-full bg-[#F4BF4F]"></div>}
+                        {!isToday && hasPublished && <div className="w-1.5 h-1 rounded-full bg-[#F7921C]"></div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <h4 className="text-[#142B42] font-bold text-[18px]">Terbit</h4>
           </div>
-          <h2 className="text-[40px] font-bold text-[#142B42] mb-1">{published}</h2>
-          <p className="text-[#A0AAB5] text-sm">Telah Di Publikasikan</p>
         </div>
       </div>
 
@@ -264,6 +361,14 @@ export default function JurnalSaya({ workspace, error }: { workspace: JurnalWork
 
       {/* Jurnal List Section */}
       <div className="bg-white rounded-[24px] p-8 shadow-sm mb-10">
+        {selectedDate && (
+          <div className="flex items-center gap-2 mb-6 bg-[#EEF2F6] px-4 py-2 rounded-full w-fit text-xs font-semibold text-[#142B42]">
+            <span>Filter Tanggal: {selectedDate}</span>
+            <button type="button" onClick={() => setSelectedDate(null)} className="p-0.5 hover:bg-gray-300 rounded-full text-gray-500 hover:text-black">
+              <X size={14} />
+            </button>
+          </div>
+        )}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 w-full">
           <div className="flex gap-4">
             <div className="mt-1 text-[#142B42]">
