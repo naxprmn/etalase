@@ -1,5 +1,5 @@
 import { lt, sql } from 'drizzle-orm'
-import { db, type DatabaseExecutor } from '@/shared/lib/db'
+import { db, type DB } from '@/shared/lib/db'
 import { serviceEvents } from '../../../../drizzle/schema'
 
 /**
@@ -10,7 +10,7 @@ export const SERVICE_EVENT_RETENTION_DAYS = 90
 
 export async function purgeServiceEvents(
   retentionDays = SERVICE_EVENT_RETENTION_DAYS,
-  database: DatabaseExecutor = db,
+  database: Pick<DB, 'delete'> = db,
 ): Promise<number> {
   if (!Number.isInteger(retentionDays) || retentionDays < 1) {
     throw new Error('retensi service_events minimal 1 hari')
