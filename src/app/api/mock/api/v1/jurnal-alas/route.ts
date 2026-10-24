@@ -39,9 +39,8 @@ export async function POST(request: Request) {
     is_published: body.is_published ?? true,
   })
 
+  // `created` sudah memuat `id` dan `status` jurnal; kunci yang sama di depan spread dulu tertimpa tanpa efek.
   return NextResponse.json({
-    status: 'success',
-    id: newId,
     ...created,
     status_label: 'Menunggu Review',
   })
