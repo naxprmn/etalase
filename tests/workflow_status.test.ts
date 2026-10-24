@@ -7,9 +7,9 @@ import {
   workflowStatusLabel,
 } from '@/entities/jurnal/lib/workflow-status'
 
-const staff = { name: 'Staf Uji', role: { is_superadmin: false } }
-const superadmin = { name: 'Superadmin', role: { is_superadmin: true } }
-const approver = { name: 'Kasubag', role: { can_approve: true, is_superadmin: false } }
+const staff = { name: 'Staf Uji', role: { id: 'r-staf', name: 'Staf', level: 1, is_superadmin: false } }
+const superadmin = { name: 'Superadmin', role: { id: 'r-super', name: 'Superadmin', level: 9, is_superadmin: true } }
+const approver = { name: 'Kasubag', role: { id: 'r-kasubag', name: 'Kasubag', level: 2, can_approve: true, is_superadmin: false } }
 
 describe('workflow status labels (Lawet Hub semantics)', () => {
   it('maps Lawet statuses to the narrative shown in the panel', () => {
