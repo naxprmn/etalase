@@ -513,7 +513,7 @@ const LandingView: React.FC<{ heroImagePath: string; heroTitle: string; heroSubt
 
         {/* SECTION 4 - DOKUMENTASI KEGIATAN */}
         <div id="section-dokumentasi" className="scroll-mt-16 md:scroll-mt-24">
-          <DokumentasiSection photos={recentPhotos || []} onPhotoClick={(id) => setSelectedJurnalId(id)} />
+          <DokumentasiSection photos={recentPhotos || []} onPhotoClick={(id) => setSelectedJurnalId(id)} isLoggedIn={!!user} />
         </div>
 
         {/* FOOTER */}

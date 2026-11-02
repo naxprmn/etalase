@@ -20,8 +20,17 @@ describe('DokumentasiSection - Unduh Foto Dokumentasi', () => {
     },
   ]
 
-  it('renders download button on documentation cards', () => {
+  it('menyembunyikan tombol unduh untuk tamu (belum login)', () => {
     render(<DokumentasiSection photos={dummyPhotos} />)
+
+    expect(screen.queryByTitle('Unduh Foto Dokumentasi')).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: 'Unduh foto Sosialisasi Pemilu Partisipatif' })
+    ).toBeNull()
+  })
+
+  it('menampilkan tombol unduh untuk user login', () => {
+    render(<DokumentasiSection photos={dummyPhotos} isLoggedIn={true} />)
 
     const downloadButtons = screen.getAllByTitle('Unduh Foto Dokumentasi')
     expect(downloadButtons).toHaveLength(2)

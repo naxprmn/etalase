@@ -188,6 +188,7 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-end justify-end p-2 pointer-events-none">
+                          {isLoggedIn && (
                           <button
                             type="button"
                             title="Unduh Foto"
@@ -204,6 +205,7 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
                               <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
                           </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -366,7 +368,8 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
             .lightbox-slide-left  { animation: slideFromLeft  0.3s cubic-bezier(0.25,0.46,0.45,0.94) both; }
           `}</style>
 
-          {/* Download button in lightbox */}
+          {/* Download button in lightbox — hanya untuk user login */}
+          {isLoggedIn && (
           <button
             type="button"
             className="absolute top-5 right-16 sm:right-20 z-10 text-white/80 hover:text-white p-2 sm:px-3.5 bg-white/10 hover:bg-white/20 rounded-full transition-all flex items-center gap-1.5 backdrop-blur-sm"
@@ -386,6 +389,7 @@ export const JurnalDetailModal: React.FC<JurnalDetailModalProps> = ({
             </svg>
             <span className="hidden sm:inline text-xs font-semibold">Unduh Foto</span>
           </button>
+          )}
 
           {/* Close button */}
           <button

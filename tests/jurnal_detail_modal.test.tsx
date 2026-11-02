@@ -72,7 +72,7 @@ describe('JurnalDetailModal - Dokumen Tambahan Download Boundary', () => {
     expect(link).toHaveAttribute('download', 'Lampiran SK.pdf')
   })
 
-  it('provides photo download action in modal and lightbox for all users', () => {
+  it('menyembunyikan aksi unduh foto untuk tamu', () => {
     renderWithClient(
       <JurnalDetailModal
         id="j-1"
@@ -84,17 +84,30 @@ describe('JurnalDetailModal - Dokumen Tambahan Download Boundary', () => {
       />
     )
 
-    // Dokumentasi header and photo thumbnail download button should be present
+    // Section dokumentasi tetap terlihat, tapi tanpa tombol unduh
     expect(screen.getByText('Dokumentasi')).toBeInTheDocument()
-    const downloadThumbnailBtn = screen.getByRole('button', { name: 'Unduh Foto 1' })
-    expect(downloadThumbnailBtn).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Unduh Foto 1' })).toBeNull()
 
-    // Open lightbox by clicking the photo
-    const photo = screen.getByAltText('Dokumentasi 1')
-    fireEvent.click(photo)
+    // Lightbox tetap bisa dibuka, tanpa tombol unduh
+    fireEvent.click(screen.getByAltText('Dokumentasi 1'))
+    expect(screen.queryByRole('button', { name: 'Unduh foto ini' })).toBeNull()
+  })
 
-    // Lightbox should have an "Unduh foto ini" button
-    const lightboxDownloadBtn = screen.getByRole('button', { name: 'Unduh foto ini' })
-    expect(lightboxDownloadBtn).toBeInTheDocument()
+  it('menampilkan aksi unduh foto untuk user login', () => {
+    renderWithClient(
+      <JurnalDetailModal
+        id="j-1"
+        isOpen={true}
+        onClose={() => {}}
+        isLoggedIn={true}
+        isInternal={false}
+        initialData={dummyItem}
+      />
+    )
+
+    expect(screen.getByRole('button', { name: 'Unduh Foto 1' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByAltText('Dokumentasi 1'))
+    expect(screen.getByRole('button', { name: 'Unduh foto ini' })).toBeInTheDocument()
   })
 })

@@ -5,7 +5,8 @@ import { triggerDownload } from '@/entities/jurnal/lib/download'
 
 type Foto = { id?: string, url: string, judul: string, kategori: string }
 
-export const DokumentasiSection = ({ photos = [], onPhotoClick }: { photos?: Foto[], onPhotoClick?: (jurnalId: string) => void }) => {
+/** Tombol unduh hanya untuk pengguna yang sudah login. */
+export const DokumentasiSection = ({ photos = [], onPhotoClick, isLoggedIn = false }: { photos?: Foto[], onPhotoClick?: (jurnalId: string) => void, isLoggedIn?: boolean }) => {
   const [startIndex, setStartIndex] = useState(0)
 
   const handleNext = () => {
@@ -90,7 +91,8 @@ export const DokumentasiSection = ({ photos = [], onPhotoClick }: { photos?: Fot
                     <img src={displayUrl} alt={foto?.judul} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 idle-animate" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent md:bg-black/20 md:group-hover:bg-black/40 transition-colors"></div>
 
-                    {/* Tombol Unduh Foto Langsung */}
+                    {/* Tombol Unduh Foto Langsung — hanya untuk user login */}
+                    {isLoggedIn && (
                     <button
                       type="button"
                       title="Unduh Foto Dokumentasi"
@@ -107,6 +109,7 @@ export const DokumentasiSection = ({ photos = [], onPhotoClick }: { photos?: Fot
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                       </svg>
                     </button>
+                    )}
 
                     <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <span className="bg-[#F7921C] text-white text-[11px] md:text-[12px] font-bold px-2.5 py-0.5 md:px-3 md:py-1 rounded-full mb-1.5 md:mb-2 inline-block shadow-sm">{foto?.kategori}</span>
