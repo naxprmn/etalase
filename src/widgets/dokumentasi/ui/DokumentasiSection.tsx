@@ -1,5 +1,7 @@
 'use client'
 import React, { useState } from 'react'
+import { toMediaDisplayUrl } from '@/entities/jurnal/lib/media-url'
+import { triggerDownload } from '@/entities/jurnal/lib/download'
 
 type Foto = { id?: string, url: string, judul: string, kategori: string }
 
@@ -70,25 +72,50 @@ export const DokumentasiSection = ({ photos = [], onPhotoClick }: { photos?: Fot
 
           {/* Cards Grid */}
           <div className={`flex md:grid overflow-x-auto snap-x snap-mandatory md:overflow-visible hide-scrollbar gap-4 md:gap-8 mx-auto -mx-4 px-4 pb-4 md:mx-auto md:px-0 md:pb-0 ${photos.length === 1 ? 'md:max-w-[486px]' : photos.length === 2 ? 'md:grid-cols-2 md:max-w-[800px]' : 'md:grid-cols-3'}`}>
-            {photos.length > 0 ? orderedPhotos.map((foto, idx) => (
-              <div
-                key={`${startIndex}-${idx}`}
-                role={foto?.id && onPhotoClick ? 'button' : undefined}
-                tabIndex={foto?.id && onPhotoClick ? 0 : undefined}
-                onClick={() => foto?.id && onPhotoClick?.(foto.id)}
-                onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && foto?.id) { e.preventDefault(); onPhotoClick?.(foto.id) } }}
-                aria-label={foto?.judul ? `Buka jurnal ${foto.judul}` : undefined}
-                className={`${isWindowed && idx >= 3 ? 'md:hidden ' : ''}min-w-[80vw] max-w-[340px] md:max-w-none snap-center md:min-w-0 md:snap-none relative flex flex-col items-center justify-center bg-[#F8FAFD] rounded-[24px] md:rounded-[32px] p-2.5 md:p-3 hover:shadow-xl transition-all duration-300 group cursor-pointer w-full shrink-0 md:shrink h-[260px] sm:h-[340px] md:h-[486px]`}>
-                <div className="w-full h-full rounded-[20px] md:rounded-[30px] overflow-hidden relative">
-                  <img src={foto?.url} alt={foto?.judul} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 idle-animate" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent md:bg-black/20 md:group-hover:bg-black/40 transition-colors"></div>
-                  <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <span className="bg-[#F7921C] text-white text-[11px] md:text-[12px] font-bold px-2.5 py-0.5 md:px-3 md:py-1 rounded-full mb-1.5 md:mb-2 inline-block shadow-sm">{foto?.kategori}</span>
-                    <h3 className="text-white font-bold text-[15px] md:text-[18px] leading-tight line-clamp-2">{foto?.judul}</h3>
+            {photos.length > 0 ? orderedPhotos.map((foto, idx) => {
+              const displayUrl = toMediaDisplayUrl(foto?.url || '');
+              const safeTitle = (foto?.judul || 'dokumentasi').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+              const filename = `${safeTitle}.jpg`;
+
+              return (
+                <div
+                  key={`${startIndex}-${idx}`}
+                  role={foto?.id && onPhotoClick ? 'button' : undefined}
+                  tabIndex={foto?.id && onPhotoClick ? 0 : undefined}
+                  onClick={() => foto?.id && onPhotoClick?.(foto.id)}
+                  onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && foto?.id) { e.preventDefault(); onPhotoClick?.(foto.id) } }}
+                  aria-label={foto?.judul ? `Buka jurnal ${foto.judul}` : undefined}
+                  className={`${isWindowed && idx >= 3 ? 'md:hidden ' : ''}min-w-[80vw] max-w-[340px] md:max-w-none snap-center md:min-w-0 md:snap-none relative flex flex-col items-center justify-center bg-[#F8FAFD] rounded-[24px] md:rounded-[32px] p-2.5 md:p-3 hover:shadow-xl transition-all duration-300 group cursor-pointer w-full shrink-0 md:shrink h-[260px] sm:h-[340px] md:h-[486px]`}>
+                  <div className="w-full h-full rounded-[20px] md:rounded-[30px] overflow-hidden relative">
+                    <img src={displayUrl} alt={foto?.judul} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 idle-animate" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent md:bg-black/20 md:group-hover:bg-black/40 transition-colors"></div>
+
+                    {/* Tombol Unduh Foto Langsung */}
+                    <button
+                      type="button"
+                      title="Unduh Foto Dokumentasi"
+                      aria-label={`Unduh foto ${foto?.judul || 'dokumentasi'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerDownload(displayUrl, filename);
+                      }}
+                      className="absolute top-3 right-3 md:top-4 md:right-4 z-20 w-9 h-9 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-[#F7921C] text-white flex items-center justify-center backdrop-blur-sm opacity-90 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:scale-110 shadow-lg"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                    </button>
+
+                    <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="bg-[#F7921C] text-white text-[11px] md:text-[12px] font-bold px-2.5 py-0.5 md:px-3 md:py-1 rounded-full mb-1.5 md:mb-2 inline-block shadow-sm">{foto?.kategori}</span>
+                      <h3 className="text-white font-bold text-[15px] md:text-[18px] leading-tight line-clamp-2">{foto?.judul}</h3>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )) : (
+              );
+            }) : (
               <div className="min-w-full md:col-span-full text-center text-gray-400 p-10">Belum ada dokumentasi tersedia.</div>
             )}
           </div>

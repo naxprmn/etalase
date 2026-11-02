@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 
 import { setujuJurnalAction, tolakJurnalAction } from '@/features/jurnal-saya/api/approve.action';
 import { Spinner } from '@/shared/ui/spinner'
+import { toMediaDisplayUrl } from '@/entities/jurnal/lib/media-url'
+import { triggerDownload } from '@/entities/jurnal/lib/download'
 
 
 
@@ -244,23 +246,36 @@ export default function Approval({ workspace }: { workspace: JurnalWorkspace | n
                   <div className="flex gap-3 overflow-x-auto">
 
                     {selectedItem.dokumentasi && selectedItem.dokumentasi.length > 0 ? (
-
                       selectedItem.dokumentasi.map((doc, idx) => {
-
-                        const isValidUrl = doc.url && (doc.url.startsWith('http') || doc.url.startsWith('/') || doc.url.startsWith('data:') || doc.url.startsWith('blob:'));
+                        const displayUrl = toMediaDisplayUrl(doc.url || '');
+                        const isValidUrl = Boolean(displayUrl);
+                        const safeTitle = (selectedItem.judul || 'dokumentasi').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+                        const filename = `${safeTitle}_foto_${idx + 1}.jpg`;
 
                         return (
-
-                          <div key={idx} className="w-[180px] h-[100px] bg-gray-200 rounded-[8px] overflow-hidden shrink-0 cursor-pointer" onClick={() => isValidUrl && window.open(doc.url, '_blank')}>
-
-                            <img src={isValidUrl ? doc.url : '/assets/banner-image.jpg'} alt={`Dokumentasi ${idx + 1}`} className="w-full h-full object-cover" />
-
+                          <div key={idx} className="relative group w-[180px] h-[100px] bg-gray-200 rounded-[8px] overflow-hidden shrink-0 cursor-pointer shadow-sm" onClick={() => isValidUrl && window.open(displayUrl, '_blank')}>
+                            <img src={isValidUrl ? displayUrl : '/assets/banner-image.jpg'} alt={`Dokumentasi ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-end justify-end p-2 pointer-events-none">
+                              <button
+                                type="button"
+                                title="Unduh Foto Dokumentasi"
+                                aria-label={`Unduh foto ${idx + 1}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  triggerDownload(displayUrl, filename);
+                                }}
+                                className="pointer-events-auto bg-black/60 hover:bg-[#F7921C] text-white p-1.5 rounded-full backdrop-blur-sm transition-all hover:scale-110 shadow-md"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                  <polyline points="7 10 12 15 17 10"></polyline>
+                                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                              </button>
+                            </div>
                           </div>
-
                         );
-
                       })
-
                     ) : (
 
                       <span className="text-gray-400 italic">Tidak ada foto dokumentasi</span>
